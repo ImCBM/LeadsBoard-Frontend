@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
+import { useQueries } from '@tanstack/react-query';
 import { Users, CalendarDays, TrendingUp, BarChart3 } from 'lucide-react';
 import * as statsApi from '../api/stats';
 import styles from './DashboardPage.module.css';
@@ -19,49 +19,38 @@ const CHART_COLORS = {
 const PIE_COLORS = ['#1fa97d', '#e8724a', '#3e93b8', '#86e0be', '#f5b594', '#8fcde1', '#cac5b0', '#dfd9c4'];
 
 export default function DashboardPage() {
-  const [summary, setSummary] = useState(null);
-  const [timeline, setTimeline] = useState([]);
-  const [byIndustry, setByIndustry] = useState([]);
-  const [byTitleTier, setByTitleTier] = useState([]);
-  const [byCountry, setByCountry] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const results = useQueries({
+    queries: [
+      { queryKey: ['stats', 'summary'], queryFn: statsApi.getSummary },
+      { queryKey: ['stats', 'timeline'], queryFn: () => statsApi.getTimeline(30) },
+      { queryKey: ['stats', 'industry'], queryFn: statsApi.getByIndustry },
+      { queryKey: ['stats', 'tier'], queryFn: statsApi.getByTitleTier },
+      { queryKey: ['stats', 'country'], queryFn: statsApi.getByCountry },
+    ],
+  });
 
-  useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        const [summaryRes, timelineRes, industryRes, tierRes, countryRes] = await Promise.all([
-          statsApi.getSummary(),
-          statsApi.getTimeline(30),
-          statsApi.getByIndustry(),
-          statsApi.getByTitleTier(),
-          statsApi.getByCountry(),
-        ]);
-        setSummary(summaryRes.data);
-        setTimeline(timelineRes.data || []);
-        setByIndustry(industryRes);
-        setByTitleTier(tierRes);
-        setByCountry(countryRes);
-      } catch (err) {
-        console.error('Failed to load dashboard data:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAll();
-  }, []);
+  const isLoading = results.some((r) => r.isLoading);
 
-  if (loading) {
+  if (isLoading) {
     return <div className={styles.loading}>Loading dashboard…</div>;
   }
 
+  const [summaryRes, timelineRes, industryRes, tierRes, countryRes] = results;
+  
+  const summary = summaryRes.data?.data || summaryRes.data || {};
+  const timeline = timelineRes.data?.data || timelineRes.data || [];
+  const byIndustry = industryRes.data || [];
+  const byTitleTier = tierRes.data || [];
+  const byCountry = countryRes.data || [];
+
   const statCards = [
-    { label: 'Total Leads', value: summary?.total_leads ?? 0, icon: Users, color: 'mint' },
-    { label: 'Today', value: summary?.today ?? 0, icon: CalendarDays, color: 'coral' },
-    { label: 'This Week', value: summary?.this_week ?? 0, icon: TrendingUp, color: 'sky' },
-    { label: 'This Month', value: summary?.this_month ?? 0, icon: BarChart3, color: 'stone' },
+    { label: 'Total Leads', value: summary.total_leads ?? 0, icon: Users, color: 'mint' },
+    { label: 'Today', value: summary.today ?? 0, icon: CalendarDays, color: 'coral' },
+    { label: 'This Week', value: summary.this_week ?? 0, icon: TrendingUp, color: 'sky' },
+    { label: 'This Month', value: summary.this_month ?? 0, icon: BarChart3, color: 'stone' },
   ];
 
-  const statusCounts = summary?.status_counts || {};
+  const statusCounts = summary.status_counts || {};
 
   return (
     <div className={styles.page}>

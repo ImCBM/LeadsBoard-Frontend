@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Download, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import * as leadsApi from '../api/leads';
 import Button from '../components/ui/Button';
@@ -24,13 +25,7 @@ const COLUMNS = [
 export default function LeadsPage() {
   const navigate = useNavigate();
 
-  // Data
-  const [leads, setLeads] = useState([]);
-  const [pagination, setPagination] = useState({});
-  const [filterOptions, setFilterOptions] = useState({});
-  const [loading, setLoading] = useState(true);
-
-  // Filters
+  // Filters state
   const [search, setSearch] = useState('');
   const [industry, setIndustry] = useState('');
   const [titleTier, setTitleTier] = useState('');
@@ -55,50 +50,48 @@ export default function LeadsPage() {
     return () => clearTimeout(debounceRef.current);
   }, [search]);
 
-  // Fetch filter options on mount
-  useEffect(() => {
-    leadsApi.getFilters().then(setFilterOptions).catch(() => {});
-  }, []);
+  // Construct params
+  const params = {
+    page,
+    sort_by: sortBy,
+    sort_dir: sortDir,
+    per_page: 25,
+  };
+  if (debouncedSearch) params.search = debouncedSearch;
+  if (industry) params.industry = industry;
+  if (titleTier) params.title_tier = titleTier;
+  if (status) params.status = status;
+  if (country) params.country = country;
+  if (dateFrom) params.date_from = dateFrom;
+  if (dateTo) params.date_to = dateTo;
 
-  // Fetch leads
-  const fetchLeads = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = {
-        page,
-        sort_by: sortBy,
-        sort_dir: sortDir,
-        per_page: 25,
-      };
-      if (debouncedSearch) params.search = debouncedSearch;
-      if (industry) params.industry = industry;
-      if (titleTier) params.title_tier = titleTier;
-      if (status) params.status = status;
-      if (country) params.country = country;
-      if (dateFrom) params.date_from = dateFrom;
-      if (dateTo) params.date_to = dateTo;
+  // React Query: Fetch filters
+  const filtersQuery = useQuery({
+    queryKey: ['leadsFilters'],
+    queryFn: leadsApi.getFilters,
+  });
 
-      const data = await leadsApi.getLeads(params);
-      setLeads(data.data || []);
-      setPagination({
-        currentPage: data.current_page,
-        lastPage: data.last_page,
-        total: data.total,
-        from: data.from,
-        to: data.to,
-        perPage: data.per_page,
-      });
-    } catch (err) {
-      toast.error('Failed to load leads');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, sortBy, sortDir, debouncedSearch, industry, titleTier, status, country, dateFrom, dateTo]);
+  // React Query: Fetch leads
+  const leadsQuery = useQuery({
+    queryKey: ['leads', params],
+    queryFn: () => leadsApi.getLeads(params),
+    placeholderData: (previousData) => previousData, // keep previous data while fetching new pages (formerly keepPreviousData)
+  });
 
-  useEffect(() => {
-    fetchLeads();
-  }, [fetchLeads]);
+  const filterOptions = filtersQuery.data || {};
+  const leadsData = leadsQuery.data || {};
+  const leads = leadsData.data || [];
+  
+  const pagination = {
+    currentPage: leadsData.current_page || 1,
+    lastPage: leadsData.last_page || 1,
+    total: leadsData.total || 0,
+    from: leadsData.from || 0,
+    to: leadsData.to || 0,
+    perPage: leadsData.per_page || 25,
+  };
+
+  const loading = leadsQuery.isLoading || (leadsQuery.isFetching && !leadsQuery.isPlaceholderData);
 
   // Sort handler
   const handleSort = (key) => {
@@ -114,17 +107,6 @@ export default function LeadsPage() {
   // CSV export
   const handleExport = async () => {
     try {
-      const params = {};
-      if (debouncedSearch) params.search = debouncedSearch;
-      if (industry) params.industry = industry;
-      if (titleTier) params.title_tier = titleTier;
-      if (status) params.status = status;
-      if (country) params.country = country;
-      if (dateFrom) params.date_from = dateFrom;
-      if (dateTo) params.date_to = dateTo;
-      params.sort_by = sortBy;
-      params.sort_dir = sortDir;
-
       await leadsApi.exportCsv(params);
       toast.success('CSV export started');
     } catch {
@@ -245,7 +227,7 @@ export default function LeadsPage() {
       </div>
 
       {/* Table */}
-      {loading ? (
+      {loading && leads.length === 0 ? (
         <div className={styles.loading}>Loading leads…</div>
       ) : leads.length === 0 ? (
         <EmptyState
@@ -256,7 +238,7 @@ export default function LeadsPage() {
         />
       ) : (
         <>
-          <div className={styles.tableWrapper}>
+          <div className={styles.tableWrapper} style={{ opacity: leadsQuery.isFetching ? 0.6 : 1, transition: 'opacity 0.2s' }}>
             <table className={styles.table}>
               <thead>
                 <tr>
