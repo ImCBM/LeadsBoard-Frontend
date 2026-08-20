@@ -1,0 +1,156 @@
+/* ═══════════════════════════════════════════════
+   LeadsBoard — Design System Tokens
+   Source: JobBoard-design.md (Fresh Minimalism)
+   ═══════════════════════════════════════════════ */
+
+:root {
+  /* ── Color Palette ─────────────────────────── */
+
+  /* Surface / Background */
+  --surface: #faf9f2;
+  --surface-dim: #e2decf;
+  --surface-bright: #faf9f2;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f4f1e6;
+  --surface-container: #eeeadb;
+  --surface-container-high: #e7e2d0;
+  --surface-container-highest: #dfd9c4;
+  --on-surface: #1e2a22;
+  --on-surface-variant: #52584a;
+  --inverse-surface: #303b32;
+  --inverse-on-surface: #f1efe2;
+  --outline: #7e8474;
+  --outline-variant: #cac5b0;
+  --surface-tint: #1fa97d;
+  --surface-variant: #e4dfcc;
+  --background: #faf9f2;
+  --on-background: #1e2a22;
+
+  /* Primary — Mint */
+  --primary: #1fa97d;
+  --on-primary: #ffffff;
+  --primary-container: #c9f1e1;
+  --on-primary-container: #08402f;
+  --inverse-primary: #86e0be;
+  --primary-fixed: #b2ecd5;
+  --primary-fixed-dim: #86e0be;
+  --on-primary-fixed: #03301f;
+  --on-primary-fixed-variant: #106647;
+
+  /* Secondary — Coral */
+  --secondary: #e8724a;
+  --on-secondary: #ffffff;
+  --secondary-container: #fbdccc;
+  --on-secondary-container: #7a2e10;
+  --secondary-fixed: #ffdbc7;
+  --secondary-fixed-dim: #f5b594;
+  --on-secondary-fixed: #451b02;
+  --on-secondary-fixed-variant: #8a3f1c;
+
+  /* Tertiary — Sky */
+  --tertiary: #3e93b8;
+  --on-tertiary: #ffffff;
+  --tertiary-container: #cfebf5;
+  --on-tertiary-container: #0f3c4c;
+  --tertiary-fixed: #c0e6f2;
+  --tertiary-fixed-dim: #8fcde1;
+  --on-tertiary-fixed: #06293a;
+  --on-tertiary-fixed-variant: #235972;
+
+  /* Error */
+  --error: #c13f2c;
+  --on-error: #ffffff;
+  --error-container: #fad9d0;
+  --on-error-container: #6b1b0c;
+
+  /* ── Typography ────────────────────────────── */
+  --font-display: 'Poppins', sans-serif;
+  --font-body: 'Inter', sans-serif;
+
+  /* Display Large */
+  --display-lg-size: 64px;
+  --display-lg-weight: 600;
+  --display-lg-line: 72px;
+  --display-lg-spacing: -0.01em;
+
+  /* Headline Large */
+  --headline-lg-size: 40px;
+  --headline-lg-weight: 600;
+  --headline-lg-line: 48px;
+  --headline-lg-spacing: -0.005em;
+
+  /* Headline Large Mobile */
+  --headline-lg-mobile-size: 28px;
+  --headline-lg-mobile-weight: 600;
+  --headline-lg-mobile-line: 36px;
+  --headline-lg-mobile-spacing: 0em;
+
+  /* Headline Medium */
+  --headline-md-size: 24px;
+  --headline-md-weight: 600;
+  --headline-md-line: 32px;
+  --headline-md-spacing: 0em;
+
+  /* Body Large */
+  --body-lg-size: 16px;
+  --body-lg-weight: 400;
+  --body-lg-line: 26px;
+  --body-lg-spacing: 0em;
+
+  /* Body Medium */
+  --body-md-size: 14px;
+  --body-md-weight: 400;
+  --body-md-line: 22px;
+  --body-md-spacing: 0em;
+
+  /* Label Caps */
+  --label-caps-size: 11px;
+  --label-caps-weight: 600;
+  --label-caps-line: 16px;
+  --label-caps-spacing: 0.08em;
+
+  /* Button */
+  --button-size: 14px;
+  --button-weight: 600;
+  --button-line: 20px;
+  --button-spacing: 0em;
+
+  /* ── Spacing ───────────────────────────────── */
+  --space-unit: 8px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --space-4xl: 96px;
+  --container-max: 1280px;
+  --gutter: 24px;
+  --margin-desktop: 64px;
+  --margin-mobile: 20px;
+  --section-gap: 96px;
+
+  /* ── Shapes ────────────────────────────────── */
+  --radius-sm: 8px;       /* inputs, small controls */
+  --radius-md: 12px;      /* cards */
+  --radius-lg: 16px;      /* modals, large cards */
+  --radius-xl: 24px;      /* hero media */
+  --radius-pill: 9999px;  /* chips, tags, toggles */
+
+  /* ── Elevation / Shadows ───────────────────── */
+  --shadow-sm: 0 1px 3px rgba(30, 42, 34, 0.04), 0 1px 2px rgba(30, 42, 34, 0.06);
+  --shadow-md: 0 4px 12px rgba(30, 42, 34, 0.06), 0 2px 4px rgba(30, 42, 34, 0.04);
+  --shadow-lg: 0 8px 24px rgba(30, 42, 34, 0.08), 0 4px 8px rgba(30, 42, 34, 0.04);
+  --shadow-xl: 0 16px 48px rgba(30, 42, 34, 0.12), 0 8px 16px rgba(30, 42, 34, 0.06);
+
+  /* ── Transitions ───────────────────────────── */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 350ms ease;
+
+  /* ── Layout ────────────────────────────────── */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 72px;
+  --header-height: 64px;
+}

@@ -1,0 +1,3 @@
+/* index.css — imports design system, no Vite boilerplate */
+@import './styles/variables.css';
+@import './styles/global.css';

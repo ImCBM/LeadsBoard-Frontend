@@ -1,0 +1,51 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-body);
+  font-size: var(--label-caps-size);
+  font-weight: var(--label-caps-weight);
+  line-height: var(--label-caps-line);
+  letter-spacing: var(--label-caps-spacing);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  user-select: none;
+  border: none;
+  white-space: nowrap;
+}
+
+.inactive {
+  background-color: var(--surface-container);
+  color: var(--on-surface-variant);
+}
+
+.inactive:hover {
+  background-color: var(--surface-container-high);
+  color: var(--on-surface);
+}
+
+.active {
+  background-color: var(--primary);
+  color: var(--on-primary);
+}
+
+.active:hover {
+  background-color: var(--on-primary-fixed-variant);
+}
+
+.removable {
+  padding-right: 8px;
+}
+
+.removeIcon {
+  display: inline-flex;
+  opacity: 0.7;
+  transition: opacity var(--transition-fast);
+}
+
+.removeIcon:hover {
+  opacity: 1;
+}

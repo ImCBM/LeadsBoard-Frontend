@@ -1,0 +1,65 @@
+.page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--space-lg);
+  background-color: var(--surface);
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  background-color: var(--surface-container-lowest);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-2xl) var(--space-xl);
+}
+
+.logoArea {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xl);
+}
+
+.logoIcon {
+  width: 40px;
+  height: 40px;
+  background-color: var(--primary);
+  color: var(--on-primary);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoText {
+  font-family: var(--font-display);
+  font-size: var(--headline-md-size);
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.subtitle {
+  text-align: center;
+  font-size: var(--body-md-size);
+  color: var(--on-surface-variant);
+  margin-bottom: var(--space-xl);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.error {
+  background-color: var(--error-container);
+  color: var(--on-error-container);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--body-md-size);
+  text-align: center;
+}

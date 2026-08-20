@@ -1,0 +1,196 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.pageTitle {
+  font-family: var(--font-display);
+  font-size: var(--headline-lg-size);
+  line-height: var(--headline-lg-line);
+  letter-spacing: var(--headline-lg-spacing);
+}
+
+/* ── Stat Cards Row ── */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-lg);
+}
+
+.statCard {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: var(--space-lg) var(--space-xl);
+  background-color: var(--surface-container);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.statIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statIcon.mint {
+  background-color: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+.statIcon.coral {
+  background-color: var(--secondary-container);
+  color: var(--on-secondary-container);
+}
+
+.statIcon.sky {
+  background-color: var(--tertiary-container);
+  color: var(--on-tertiary-container);
+}
+
+.statIcon.stone {
+  background-color: var(--surface-container-high);
+  color: var(--on-surface-variant);
+}
+
+.statContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.statLabel {
+  font-family: var(--font-body);
+  font-size: var(--label-caps-size);
+  font-weight: var(--label-caps-weight);
+  letter-spacing: var(--label-caps-spacing);
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+}
+
+.statValue {
+  font-family: var(--font-display);
+  font-size: var(--headline-md-size);
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+/* ── Charts Grid ── */
+.chartsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+}
+
+.chartCard {
+  background-color: var(--surface-container);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-lg);
+}
+
+.chartCard.fullWidth {
+  grid-column: 1 / -1;
+}
+
+.chartTitle {
+  font-family: var(--font-display);
+  font-size: var(--body-lg-size);
+  font-weight: 600;
+  color: var(--on-surface);
+  margin-bottom: var(--space-md);
+}
+
+/* ── Status cards row ── */
+.statusGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-md);
+}
+
+.statusCard {
+  text-align: center;
+  padding: var(--space-md);
+  border-radius: var(--radius-sm);
+}
+
+.statusCard.new {
+  background-color: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+.statusCard.reviewed {
+  background-color: var(--tertiary-container);
+  color: var(--on-tertiary-container);
+}
+
+.statusCard.qualified {
+  background-color: var(--secondary-container);
+  color: var(--on-secondary-container);
+}
+
+.statusCard.rejected {
+  background-color: var(--error-container);
+  color: var(--on-error-container);
+}
+
+.statusValue {
+  font-family: var(--font-display);
+  font-size: var(--headline-md-size);
+  font-weight: 600;
+}
+
+.statusLabel {
+  font-size: var(--label-caps-size);
+  font-weight: var(--label-caps-weight);
+  letter-spacing: var(--label-caps-spacing);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+/* ── Loading ── */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: var(--on-surface-variant);
+  font-size: var(--body-lg-size);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .chartsGrid {
+    grid-template-columns: 1fr;
+  }
+  .statusGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+  .statusGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .pageTitle {
+    font-size: var(--headline-lg-mobile-size);
+    line-height: var(--headline-lg-mobile-line);
+  }
+}
