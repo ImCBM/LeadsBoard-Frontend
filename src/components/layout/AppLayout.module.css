@@ -54,6 +54,8 @@
 /* ── Content area ── */
 .content {
   flex: 1;
+  width: 100%;
+  margin: 0 auto;
   padding: var(--space-xl) var(--margin-desktop);
   max-width: calc(var(--container-max) + var(--margin-desktop) * 2);
 }

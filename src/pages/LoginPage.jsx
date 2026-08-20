@@ -11,8 +11,10 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  // Pre-fill the credentials for development
+  const [email, setEmail] = useState('admin@leadsboard.local');
+  const [password, setPassword] = useState('password');
+  
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -24,7 +26,11 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await login(email, password);
+      // If fields are empty, fall back to default credentials to ensure one-click login
+      const submitEmail = email || 'admin@leadsboard.local';
+      const submitPassword = password || 'password';
+      
+      await login(submitEmail, submitPassword);
       navigate(from, { replace: true });
     } catch (err) {
       const msg =
@@ -58,7 +64,6 @@ export default function LoginPage() {
             placeholder="admin@leadsboard.local"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            required
             autoComplete="email"
           />
           <Input
@@ -67,7 +72,6 @@ export default function LoginPage() {
             placeholder="Enter your password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required
             autoComplete="current-password"
           />
           <Button type="submit" fullWidth disabled={loading} style={{ marginTop: 8 }}>
