@@ -39,9 +39,9 @@ export default function DashboardPage() {
   
   const summary = summaryRes.data?.data || summaryRes.data || {};
   const timeline = timelineRes.data?.data || timelineRes.data || [];
-  const byIndustry = industryRes.data || [];
-  const byTitleTier = tierRes.data || [];
-  const byCountry = countryRes.data || [];
+  const byIndustry = industryRes.data?.data || industryRes.data || [];
+  const byTitleTier = tierRes.data?.data || tierRes.data || [];
+  const byCountry = countryRes.data?.data || countryRes.data || [];
 
   const statCards = [
     { label: 'Total Leads', value: summary.total_leads ?? 0, icon: Users, color: 'mint' },

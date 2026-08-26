@@ -1,0 +1,401 @@
+/* ═══════════════════════════════════════════════
+   AdvancedFilterPanel — Compact & High-Density Design
+   ═══════════════════════════════════════════════ */
+
+.panel {
+  background-color: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.panelGrid {
+  padding: 12px 16px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px 18px;
+}
+
+/* ── Individual Filter Block ── */
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.blockHeader {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.blockIcon {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.blockTitle {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on-surface);
+  white-space: nowrap;
+}
+
+/* ── Chip Rows ── */
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.miniChip {
+  background-color: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-pill);
+  padding: 3px 8px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.miniChip:hover {
+  background-color: var(--surface-container);
+  color: var(--on-surface);
+  border-color: var(--outline);
+}
+
+.miniChip:active {
+  transform: scale(0.96);
+}
+
+.miniChipActive {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: var(--on-primary) !important;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(31, 169, 125, 0.25);
+}
+
+.microChip {
+  background-color: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-pill);
+  padding: 2px 6px;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.microChip:hover {
+  background-color: var(--surface-container);
+  color: var(--on-surface);
+}
+
+.microChip:active {
+  transform: scale(0.96);
+}
+
+/* ── Inline Inputs Row (Min/Max Custom) ── */
+.inlineInputsRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.inlineLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--outline);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.compactNumInput {
+  width: 58px;
+  padding: 4px 6px;
+  background-color: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--on-surface);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.compactNumInput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(31, 169, 125, 0.12);
+}
+
+.toSeparator {
+  font-size: 11px;
+  color: var(--outline);
+  font-weight: 600;
+}
+
+.unitLabel {
+  font-size: 10px;
+  color: var(--outline);
+  font-weight: 600;
+}
+
+/* ── Dual Status Row (Web & Email) ── */
+.dualStatusRow {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.statusSubGroup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* ── Date Inputs Row ── */
+.inlineDateRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.dateChipsGroup {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.compactDateInput {
+  padding: 3px 5px;
+  background-color: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--on-surface);
+  outline: none;
+  cursor: pointer;
+  width: 95px;
+  transition: border-color var(--transition-fast);
+}
+
+.compactDateInput:focus {
+  border-color: var(--primary);
+}
+
+/* ── Searchable Select ── */
+.searchableSelect {
+  position: relative;
+  width: 100%;
+}
+
+.selectTrigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  background-color: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--on-surface);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+}
+
+.selectTrigger:hover {
+  border-color: var(--outline);
+}
+
+.selectTriggerOpen {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(31, 169, 125, 0.12);
+}
+
+.selectTriggerActive {
+  border-color: var(--primary);
+  color: var(--on-surface);
+  font-weight: 500;
+}
+
+.selectTriggerIcon {
+  color: var(--outline);
+  flex-shrink: 0;
+}
+
+.selectTriggerText {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selectChevron {
+  color: var(--outline);
+  flex-shrink: 0;
+  transition: transform var(--transition-fast);
+}
+
+.selectChevronOpen {
+  transform: rotate(180deg);
+}
+
+.selectDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  animation: dropIn 0.15s ease;
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.selectSearchWrap {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--outline-variant);
+  gap: 5px;
+}
+
+.selectSearchIcon {
+  color: var(--outline);
+  flex-shrink: 0;
+}
+
+.selectSearchInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--on-surface);
+  background: transparent;
+}
+
+.selectSearchInput::placeholder {
+  color: var(--outline);
+}
+
+.selectSearchClear {
+  background: none;
+  border: none;
+  color: var(--outline);
+  cursor: pointer;
+  display: flex;
+  padding: 1px;
+}
+
+.selectOptions {
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 3px;
+}
+
+.selectOption {
+  display: block;
+  width: 100%;
+  padding: 5px 8px;
+  font-size: 11px;
+  color: var(--on-surface);
+  background: none;
+  border: none;
+  border-radius: calc(var(--radius-sm) - 2px);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color var(--transition-fast);
+}
+
+.selectOption:hover {
+  background-color: var(--surface-container);
+}
+
+.selectOptionIndented {
+  padding-left: 16px;
+}
+
+.selectOptionActive {
+  background-color: var(--primary-container) !important;
+  color: var(--on-primary-container) !important;
+  font-weight: 600;
+}
+
+.selectGroup {
+  margin-bottom: 2px;
+}
+
+.selectGroupLabel {
+  padding: 4px 8px 2px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--outline);
+}
+
+.selectEmpty {
+  padding: 8px;
+  font-size: 11px;
+  color: var(--on-surface-variant);
+  text-align: center;
+  font-style: italic;
+}
+
+/* ── Responsive Adaptations ── */
+@media (max-width: 1280px) {
+  .panelGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 680px) {
+  .panelGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 10px 12px;
+  }
+}

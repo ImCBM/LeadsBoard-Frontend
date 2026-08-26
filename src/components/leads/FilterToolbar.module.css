@@ -1,0 +1,496 @@
+/* ═══════════════════════════════════════════════
+   FilterToolbar — Compact & Space-Efficient Toolbar
+   ═══════════════════════════════════════════════ */
+
+.toolbar {
+  background-color: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+}
+
+/* ── Row 1: Search + Sort ── */
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.searchWrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.searchIconWrap {
+  position: absolute;
+  left: 11px;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.searchIcon {
+  color: var(--outline);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.searchSpinner {
+  color: var(--primary);
+  animation: spin 0.8s linear infinite;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 7px 32px 7px 34px;
+  background-color: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--on-surface);
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.searchInput::placeholder {
+  color: var(--outline);
+  font-size: 12px;
+}
+
+.searchInput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(31, 169, 125, 0.12);
+}
+
+.searchClear {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--outline);
+  cursor: pointer;
+  display: flex;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.searchClear:hover {
+  color: var(--on-surface);
+  background-color: var(--surface-container);
+}
+
+/* Sort Dropdown */
+.sortContainer {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 11px;
+  background-color: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--on-surface);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.sortButton:hover {
+  background-color: var(--surface-container);
+  border-color: var(--outline);
+}
+
+.sortButton:active {
+  transform: scale(0.98);
+}
+
+.sortLabel {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sortChevron {
+  transition: transform var(--transition-fast);
+  color: var(--outline);
+}
+
+.sortChevronOpen {
+  transform: rotate(180deg);
+}
+
+.sortDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 220px;
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  padding: 4px;
+  animation: dropIn 0.15s ease;
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.sortDropdownHeader {
+  padding: 6px 8px 4px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--on-surface-variant);
+  border-bottom: 1px solid var(--outline-variant);
+  margin-bottom: 3px;
+}
+
+.sortOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--on-surface);
+  background: none;
+  border: none;
+  border-radius: calc(var(--radius-sm) - 2px);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+}
+
+.sortOption:hover {
+  background-color: var(--surface-container);
+  color: var(--on-surface);
+}
+
+.sortOptionActive {
+  background-color: var(--primary-container) !important;
+  color: var(--on-primary-container) !important;
+  font-weight: 600;
+}
+
+.sortCheck {
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* ── Row 2: Quick Filter Chips ── */
+.quickFiltersRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chipGroup {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chipGroupLabel {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--outline);
+  margin-right: 2px;
+  white-space: nowrap;
+}
+
+.chipGroupItems {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  overflow-x: auto;
+}
+
+.chipDivider {
+  width: 1px;
+  height: 18px;
+  background-color: var(--outline-variant);
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+/* Status filter chips */
+.filterChip {
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-pill);
+  padding: 3px 9px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.filterChip:hover {
+  background: var(--surface-container);
+  color: var(--on-surface);
+  border-color: var(--outline);
+}
+
+.filterChip:active {
+  transform: scale(0.96);
+}
+
+.filterChipActive {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: var(--on-primary) !important;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(31, 169, 125, 0.25);
+}
+
+/* Tier chips */
+.tierChip {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.tierChip:hover {
+  background: var(--surface-container);
+  color: var(--on-surface);
+}
+
+.tierChip:active {
+  transform: scale(0.96);
+}
+
+.tierChipActive {
+  background: var(--surface) !important;
+  border-color: var(--outline-variant) !important;
+  color: var(--primary) !important;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Advanced Filter Toggle */
+.advancedToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background-color: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--on-surface);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+  margin-left: auto;
+}
+
+.advancedToggle:hover {
+  background-color: var(--surface-container);
+  border-color: var(--primary);
+}
+
+.advancedToggle:active {
+  transform: scale(0.97);
+}
+
+.advancedToggleOpen {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.advancedToggleActive {
+  background-color: var(--primary-container) !important;
+  border-color: var(--primary) !important;
+  color: var(--on-primary-container) !important;
+}
+
+.advancedBadge {
+  background-color: var(--primary);
+  color: var(--on-primary);
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  padding: 1px 5px;
+  line-height: 1.2;
+}
+
+/* ── Row 3: Active Criteria Bar ── */
+.activeCriteriaBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-top: 6px;
+  border-top: 1px dashed var(--outline-variant);
+  position: relative;
+}
+
+.fetchingBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  background-size: 200% 100%;
+  animation: barSlide 1.2s ease-in-out infinite;
+  border-radius: 1px;
+}
+
+@keyframes barSlide {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.criteriaLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on-surface-variant);
+  white-space: nowrap;
+}
+
+.criteriaChips {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.criteriaChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  background-color: var(--primary-container);
+  color: var(--on-primary-container);
+  padding: 2px 5px 2px 8px;
+  border-radius: var(--radius-pill);
+  font-weight: 500;
+}
+
+.criteriaChipCategory {
+  font-weight: 600;
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+.criteriaChipValue {
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.criteriaChipRemove {
+  background: none;
+  border: none;
+  color: var(--on-primary-container);
+  cursor: pointer;
+  display: flex;
+  padding: 1px;
+  border-radius: 50%;
+}
+
+.criteriaChipRemove:hover {
+  background-color: rgba(8, 64, 47, 0.2);
+}
+
+.resetAllBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--error);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.resetAllBtn:hover {
+  background-color: var(--error-container);
+}
+
+/* ── Responsive ── */
+@media (max-width: 960px) {
+  .searchRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sortButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .sortDropdown {
+    right: 0;
+    left: 0;
+    min-width: unset;
+  }
+
+  .quickFiltersRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .chipDivider {
+    display: none;
+  }
+
+  .advancedToggle {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+}

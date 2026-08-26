@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import styles from './Input.module.css';
 
 const Input = forwardRef(function Input(
-  { label, error, className = '', type = 'text', as = 'input', ...props },
+  { label, error, className = '', wrapperClassName = '', type = 'text', as = 'input', ...props },
   ref,
 ) {
   const Component = as === 'select' ? 'select' : as === 'textarea' ? 'textarea' : 'input';
@@ -14,7 +14,7 @@ const Input = forwardRef(function Input(
   ].filter(Boolean).join(' ');
 
   return (
-    <div className={`${styles.field} ${error ? styles.error : ''}`}>
+    <div className={`${styles.field} ${error ? styles.error : ''} ${wrapperClassName}`}>
       {label && <label className={styles.label}>{label}</label>}
       <Component ref={ref} type={Component === 'input' ? type : undefined} className={inputClasses} {...props} />
       {error && <span className={styles.errorText}>{error}</span>}
