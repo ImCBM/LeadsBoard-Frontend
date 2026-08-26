@@ -94,6 +94,33 @@
   box-shadow: var(--shadow-sm);
 }
 
+.headerSortSelect {
+  padding: 7px 28px 7px 12px;
+  background-color: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--on-surface);
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%237e8474' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  transition: all var(--transition-fast);
+}
+
+.headerSortSelect:hover {
+  background-color: var(--surface-container);
+  border-color: var(--outline);
+}
+
+.headerSortSelect:focus {
+  border-color: var(--primary);
+}
+
 .toolBtn {
   display: inline-flex;
   align-items: center;
@@ -672,6 +699,12 @@
   padding: 1px 6px;
   border-radius: var(--radius-sm);
   width: fit-content;
+}
+
+.tableMutedText {
+  color: var(--on-surface-variant);
+  opacity: 0.5;
+  font-size: 13px;
 }
 
 .locationCell {

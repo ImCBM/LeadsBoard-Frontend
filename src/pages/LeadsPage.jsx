@@ -31,11 +31,22 @@ const DEFAULT_VISIBLE_COLUMNS = {
   company: true,
   role: true,
   industry: true,
+  headcount: true,
   location: true,
   contact: true,
   status: true,
   date: true,
   actions: true,
+};
+
+// Continent/Region mapping dictionary
+const REGION_COUNTRIES = {
+  'Europe': ['Austria', 'Belgium', 'Bulgaria', 'Croatia', 'Cyprus', 'Czech Republic', 'Denmark', 'Estonia', 'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'Ireland', 'Italy', 'Latvia', 'Lithuania', 'Luxembourg', 'Malta', 'Netherlands', 'Poland', 'Portugal', 'Romania', 'Slovakia', 'Slovenia', 'Spain', 'Sweden', 'United Kingdom', 'Norway', 'Switzerland', 'Iceland'],
+  'Asia': ['India', 'Singapore', 'China', 'Japan', 'South Korea', 'Israel', 'Turkey', 'Saudi Arabia', 'United Arab Emirates', 'Taiwan', 'Hong Kong'],
+  'North America': ['United States', 'Canada', 'Mexico'],
+  'South America': ['Brazil', 'Argentina', 'Chile', 'Colombia', 'Peru'],
+  'Oceania': ['Australia', 'New Zealand'],
+  'Africa': ['South Africa', 'Nigeria', 'Egypt', 'Kenya']
 };
 
 const STATUS_TABS = [
@@ -63,8 +74,11 @@ export default function LeadsPage() {
   const [titleTier, setTitleTier] = useState('');
   const [industry, setIndustry] = useState('');
   const [country, setCountry] = useState('');
+  const [region, setRegion] = useState('');
   const [channel, setChannel] = useState('');
   const [headcountRange, setHeadcountRange] = useState('');
+  const [headcountMin, setHeadcountMin] = useState('');
+  const [headcountMax, setHeadcountMax] = useState('');
   const [websiteStatus, setWebsiteStatus] = useState('');
   const [emailStatus, setEmailStatus] = useState('');
   const [dateFrom, setDateFrom] = useState('');
@@ -110,6 +124,8 @@ export default function LeadsPage() {
   if (country) params.country = country;
   if (channel) params.ingestion_channel = channel;
   if (headcountRange) params.headcount_range = headcountRange;
+  if (headcountMin) params.headcount_min = headcountMin;
+  if (headcountMax) params.headcount_max = headcountMax;
   if (websiteStatus) params.website_status = websiteStatus;
   if (emailStatus) params.email_status = emailStatus;
   if (dateFrom) params.date_from = dateFrom;
@@ -171,8 +187,11 @@ export default function LeadsPage() {
     setTitleTier('');
     setIndustry('');
     setCountry('');
+    setRegion('');
     setChannel('');
     setHeadcountRange('');
+    setHeadcountMin('');
+    setHeadcountMax('');
     setWebsiteStatus('');
     setEmailStatus('');
     setDateFrom('');
@@ -182,8 +201,8 @@ export default function LeadsPage() {
 
   // Count active advanced filter criteria
   const activeAdvancedCount = [
-    industry, country, channel, headcountRange,
-    websiteStatus, emailStatus, dateFrom, dateTo
+    industry, country, region, channel, headcountRange,
+    headcountMin, headcountMax, websiteStatus, emailStatus, dateFrom, dateTo
   ].filter(Boolean).length;
 
   const hasAnyFilters = search || status || titleTier || activeAdvancedCount > 0;
@@ -191,9 +210,12 @@ export default function LeadsPage() {
   const handleApplyAdvancedFilters = (newFilters) => {
     if (newFilters.industry !== undefined) setIndustry(newFilters.industry);
     if (newFilters.country !== undefined) setCountry(newFilters.country);
+    if (newFilters.region !== undefined) setRegion(newFilters.region);
     if (newFilters.titleTier !== undefined) setTitleTier(newFilters.titleTier);
     if (newFilters.channel !== undefined) setChannel(newFilters.channel);
     if (newFilters.headcountRange !== undefined) setHeadcountRange(newFilters.headcountRange);
+    if (newFilters.headcountMin !== undefined) setHeadcountMin(newFilters.headcountMin);
+    if (newFilters.headcountMax !== undefined) setHeadcountMax(newFilters.headcountMax);
     if (newFilters.websiteStatus !== undefined) setWebsiteStatus(newFilters.websiteStatus);
     if (newFilters.emailStatus !== undefined) setEmailStatus(newFilters.emailStatus);
     if (newFilters.dateFrom !== undefined) setDateFrom(newFilters.dateFrom);
@@ -264,6 +286,28 @@ export default function LeadsPage() {
             </button>
           </div>
 
+          {/* Card View Sort Selector */}
+          {viewMode === 'cards' && (
+            <select
+              className={styles.headerSortSelect}
+              value={`${sortBy}:${sortDir}`}
+              onChange={(e) => {
+                const [field, direction] = e.target.value.split(':');
+                setSortBy(field);
+                setSortDir(direction);
+                setPage(1);
+              }}
+            >
+              <option value="created_at:desc">Sort: Newest First</option>
+              <option value="created_at:asc">Sort: Oldest First</option>
+              <option value="employee_headcount:asc">Sort: Headcount (Low to High)</option>
+              <option value="employee_headcount:desc">Sort: Headcount (High to Low)</option>
+              <option value="full_name:asc">Sort: Name (A-Z)</option>
+              <option value="full_name:desc">Sort: Name (Z-A)</option>
+              <option value="company_name:asc">Sort: Company (A-Z)</option>
+            </select>
+          )}
+
           {/* Columns Customizer */}
           {viewMode === 'table' && (
             <div className={styles.columnToggleContainer}>
@@ -300,7 +344,11 @@ export default function LeadsPage() {
                     </label>
                     <label className={styles.columnOption}>
                       <input type="checkbox" checked={visibleColumns.industry} onChange={() => toggleColumn('industry')} />
-                      <span>Industry & Headcount</span>
+                      <span>Industry</span>
+                    </label>
+                    <label className={styles.columnOption}>
+                      <input type="checkbox" checked={visibleColumns.headcount} onChange={() => toggleColumn('headcount')} />
+                      <span>Employee Headcount</span>
                     </label>
                     <label className={styles.columnOption}>
                       <input type="checkbox" checked={visibleColumns.location} onChange={() => toggleColumn('location')} />
@@ -369,26 +417,29 @@ export default function LeadsPage() {
               ))}
             </select>
 
+            {/* Region / Continent Selector */}
             <select
               className={styles.inlineSelect}
-              value={country}
-              onChange={(e) => { setCountry(e.target.value); setPage(1); }}
+              value={region}
+              onChange={(e) => {
+                const reg = e.target.value;
+                setRegion(reg);
+                if (reg) {
+                  const countriesInRegion = REGION_COUNTRIES[reg] || [];
+                  const availableInRegion = countriesInRegion.filter(c => 
+                    (filterOptions.countries || []).includes(c)
+                  );
+                  setCountry(availableInRegion.join(','));
+                } else {
+                  setCountry('');
+                }
+                setPage(1);
+              }}
             >
-              <option value="">All Countries</option>
-              {(filterOptions.countries || []).map((c) => (
-                <option key={c} value={c}>{c}</option>
+              <option value="">All Regions</option>
+              {Object.keys(REGION_COUNTRIES).map((reg) => (
+                <option key={reg} value={reg}>{reg}</option>
               ))}
-            </select>
-
-            <select
-              className={styles.inlineSelect}
-              value={headcountRange}
-              onChange={(e) => { setHeadcountRange(e.target.value); setPage(1); }}
-            >
-              <option value="">Any Size</option>
-              <option value="1-50">1–50 (Small)</option>
-              <option value="51-500">51–500 (Mid-Market)</option>
-              <option value="1000+">1,000+ (Enterprise)</option>
             </select>
 
             {/* Advanced Filter Trigger Button */}
@@ -593,8 +644,17 @@ export default function LeadsPage() {
                     {visibleColumns.industry && (
                       <th onClick={() => handleSort('industry_classification')} className={styles.sortableTh}>
                         <span className={styles.thContent}>
-                          Industry & Headcount
+                          Industry
                           <SortIcon column="industry_classification" />
+                        </span>
+                      </th>
+                    )}
+
+                    {visibleColumns.headcount && (
+                      <th onClick={() => handleSort('employee_headcount')} className={styles.sortableTh}>
+                        <span className={styles.thContent}>
+                          Headcount
+                          <SortIcon column="employee_headcount" />
                         </span>
                       </th>
                     )}
@@ -708,20 +768,26 @@ export default function LeadsPage() {
                           </td>
                         )}
 
-                        {/* Industry & Headcount */}
+                        {/* Industry */}
                         {visibleColumns.industry && (
                           <td>
-                            <div className={styles.industryCell}>
-                              <span className={styles.tableIndustryText} title={lead.industry_classification}>
-                                {lead.industry_classification || '—'}
+                            <span className={styles.tableIndustryText} title={lead.industry_classification}>
+                              {lead.industry_classification || '—'}
+                            </span>
+                          </td>
+                        )}
+
+                        {/* Headcount */}
+                        {visibleColumns.headcount && (
+                          <td>
+                            {lead.employee_headcount ? (
+                              <span className={styles.tableHeadcountPill}>
+                                <Users size={11} />
+                                <span>{lead.employee_headcount.toLocaleString()} emp</span>
                               </span>
-                              {lead.employee_headcount && (
-                                <span className={styles.tableHeadcountPill}>
-                                  <Users size={11} />
-                                  <span>{lead.employee_headcount.toLocaleString()} emp</span>
-                                </span>
-                              )}
-                            </div>
+                            ) : (
+                              <span className={styles.tableMutedText}>—</span>
+                            )}
                           </td>
                         )}
 
