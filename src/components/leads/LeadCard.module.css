@@ -1,0 +1,301 @@
+.card {
+  background-color: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+  cursor: pointer;
+  position: relative;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+}
+
+.card:active {
+  transform: scale(0.99);
+}
+
+.cardSelected {
+  border-color: var(--primary) !important;
+  background-color: var(--surface-container-lowest) !important;
+  box-shadow: 0 0 0 2px var(--primary-container), var(--shadow-md) !important;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(135deg, var(--primary-container), var(--tertiary-container));
+  color: var(--on-primary-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--surface-container-low);
+  box-shadow: var(--shadow-sm);
+}
+
+.leadInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.leadName {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+}
+
+.tierBadge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tierNeutral {
+  background-color: var(--surface-container-high);
+  color: var(--on-surface-variant);
+  border: 1px solid var(--outline-variant);
+}
+
+.jobTitle {
+  font-size: 13px;
+  color: var(--on-surface-variant);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.statusWrap {
+  flex-shrink: 0;
+}
+
+/* ── Company Section ── */
+.companyBox {
+  background-color: var(--surface-container-low);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.companyHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.companyIcon {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.companyName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.domainRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 21px;
+}
+
+.domainLink {
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.domainLink:hover {
+  text-decoration: underline;
+}
+
+.webBadge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background-color: var(--surface-container);
+  color: var(--on-surface-variant);
+}
+
+.webBadgeOk {
+  background-color: var(--tertiary-container);
+  color: var(--on-tertiary-container);
+  border: 1px solid var(--tertiary-fixed-dim);
+}
+
+/* ── Metadata Badges ── */
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.metaChip {
+  font-size: 11px;
+  color: var(--on-surface-variant);
+  background-color: var(--surface-container);
+  border: 1px solid var(--outline-variant);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.headcountChip {
+  background-color: var(--surface-container);
+  color: var(--on-surface-variant);
+  font-weight: 500;
+}
+
+/* ── Footer ── */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--outline-variant);
+  margin-top: auto;
+}
+
+.contactGroup {
+  flex: 1;
+  min-width: 0;
+}
+
+.emailBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background-color: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  color: var(--on-surface);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  max-width: 100%;
+}
+
+.emailBtn:hover {
+  background-color: var(--surface-container);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.emailBtnCopied {
+  background-color: var(--primary-container) !important;
+  border-color: var(--primary) !important;
+  color: var(--on-primary-container) !important;
+}
+
+.emailText {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.copyHint {
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--outline);
+  margin-left: 2px;
+}
+
+.noEmail {
+  font-size: 11px;
+  color: var(--outline);
+  font-style: italic;
+}
+
+.actionIcons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.iconBtn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.iconBtn:hover {
+  background-color: var(--surface-container);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.viewBtn:hover {
+  background-color: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--primary);
+}
