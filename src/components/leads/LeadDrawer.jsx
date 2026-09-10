@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  X, ExternalLink, Mail, Copy, Check, Globe, 
-  Building2, MapPin, Users, Calendar, ArrowRight, ShieldCheck,
-  Tag, Info, Sparkles, CheckCircle2, Clock
+  X, ExternalLink, Mail, Phone, Copy, Check, Globe, 
+  Building2, MapPin, Users, ArrowRight, ShieldCheck,
+  Tag, CheckCircle2
 } from 'lucide-react';
 
 const LinkedInIcon = ({ size = 15 }) => (
@@ -102,6 +102,16 @@ export default function LeadDrawer({ lead, onClose, onLeadUpdated }) {
                 <span>Send Email</span>
               </a>
             )}
+            {lead.contact_number && (
+              <a 
+                href={`tel:${lead.contact_number}`} 
+                className={styles.quickAction}
+                title="Call phone"
+              >
+                <Phone size={15} />
+                <span>Call Phone</span>
+              </a>
+            )}
             {lead.executive_linkedin_url && (
               <a 
                 href={lead.executive_linkedin_url} 
@@ -177,6 +187,22 @@ export default function LeadDrawer({ lead, onClose, onLeadUpdated }) {
                       title="Copy email"
                     >
                       {copiedField === 'Email' ? <Check size={13} className={styles.copiedIcon} /> : <Copy size={13} />}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className={styles.infoRow}>
+                <span className={styles.label}>Contact Number</span>
+                <div className={styles.valueGroup}>
+                  <span className={styles.value}>{lead.contact_number || '—'}</span>
+                  {lead.contact_number && (
+                    <button 
+                      className={styles.copyBtn} 
+                      onClick={() => copyToClipboard(lead.contact_number, 'Phone')}
+                      title="Copy phone"
+                    >
+                      {copiedField === 'Phone' ? <Check size={13} className={styles.copiedIcon} /> : <Copy size={13} />}
                     </button>
                   )}
                 </div>

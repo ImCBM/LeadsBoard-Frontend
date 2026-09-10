@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import {
-  Users, Globe, Mail, MapPin, Building2,
-  Tag, Calendar, Sparkles, Search, X, ChevronDown
+  Users, Globe, MapPin, Building2,
+  Sparkles, Search, X, ChevronDown
 } from 'lucide-react';
 import styles from './AdvancedFilterPanel.module.css';
 
@@ -198,8 +198,6 @@ export default function AdvancedFilterPanel({
   onFilterChange,
   filterOptions = {},
 }) {
-  if (!isOpen) return null;
-
   const {
     industry = '',
     country = '',
@@ -212,7 +210,17 @@ export default function AdvancedFilterPanel({
     emailStatus = '',
     dateFrom = '',
     dateTo = '',
-  } = filters;
+  } = filters || {};
+
+  const availableCountries = useMemo(() => {
+    if (!isOpen) return [];
+    const allCountries = filterOptions.countries || [];
+    if (!region) return allCountries;
+    const regionList = REGION_COUNTRIES[region] || [];
+    return allCountries.filter((c) => regionList.includes(c));
+  }, [isOpen, filterOptions.countries, region]);
+
+  if (!isOpen) return null;
 
   const handleChange = (key, value) => {
     onFilterChange(key, value);
@@ -240,13 +248,6 @@ export default function AdvancedFilterPanel({
       handleChange('region', matchedRegion || '');
     }
   };
-
-  const availableCountries = useMemo(() => {
-    const allCountries = filterOptions.countries || [];
-    if (!region) return allCountries;
-    const regionList = REGION_COUNTRIES[region] || [];
-    return allCountries.filter((c) => regionList.includes(c));
-  }, [filterOptions.countries, region]);
 
   return (
     <div className={styles.panel}>

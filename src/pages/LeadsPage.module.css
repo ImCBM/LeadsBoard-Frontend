@@ -479,10 +479,40 @@
   font-weight: 500;
 }
 
+.tableContactStack {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
 .tableEmailGroup {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.tablePhoneGroup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tablePhoneLink {
+  color: var(--on-surface-variant);
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: none;
+}
+
+.tablePhoneLink:hover {
+  color: var(--primary);
+  text-decoration: underline;
 }
 
 .tableEmailLink {

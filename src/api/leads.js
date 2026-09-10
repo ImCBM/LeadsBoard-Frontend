@@ -71,6 +71,23 @@ export const exportCsv = async (params = {}) => {
 };
 
 /**
+ * POST /leads/import/csv — Upload and import a CSV file with duplicate and validation checks.
+ * @param {File} file
+ * @returns {Promise<{ success, message, summary: { total, inserted, duplicates, errors }, details: Array }>}
+ */
+export const importCsv = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const { data } = await client.post('/leads/import/csv', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return data;
+};
+
+/**
  * GET /leads/filters — Distinct filter options for dropdowns.
  * @returns {{ industries, title_tiers, statuses, countries, channels }}
  */

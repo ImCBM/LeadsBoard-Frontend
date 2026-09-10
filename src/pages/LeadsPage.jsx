@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { 
-  Download, ArrowUpDown, ArrowUp, ArrowDown, 
+  Download, UploadCloud, Phone, ArrowUpDown, ArrowUp, ArrowDown, 
   ExternalLink, Mail, Copy, Check, Users, MapPin, 
   Globe, SlidersHorizontal, Eye, X, Building2,
   LayoutGrid, Table as TableIcon
@@ -12,6 +11,13 @@ const LinkedInIcon = ({ size = 14 }) => (
     <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.45c-.88 0-1.6.72-1.6 1.6s.72 1.6 1.6 1.6c.88 0 1.6-.72 1.6-1.6s-.72-1.6-1.6-1.6Z"/>
   </svg>
 );
+
+function SortIcon({ column, sortBy, sortDir }) {
+  if (sortBy !== column) return <ArrowUpDown size={12} className={styles.sortIcon} />;
+  return sortDir === 'asc'
+    ? <ArrowUp size={12} className={`${styles.sortIcon} ${styles.active}`} />
+    : <ArrowDown size={12} className={`${styles.sortIcon} ${styles.active}`} />;
+}
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -25,6 +31,7 @@ import LeadCard from '../components/leads/LeadCard';
 import LeadSkeleton from '../components/leads/LeadSkeleton';
 import FilterToolbar from '../components/leads/FilterToolbar';
 import AdvancedFilterPanel from '../components/leads/AdvancedFilterPanel';
+import ImportLeadsModal from '../components/leads/ImportLeadsModal';
 import styles from './LeadsPage.module.css';
 
 const DEFAULT_VISIBLE_COLUMNS = {
@@ -71,6 +78,8 @@ export default function LeadsPage() {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
   const [copiedEmail, setCopiedEmail] = useState(null);
+  const [copiedPhone, setCopiedPhone] = useState(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Debounced search
   const debounceRef = useRef(null);
@@ -280,6 +289,14 @@ export default function LeadsPage() {
     setTimeout(() => setCopiedEmail(null), 2000);
   };
 
+  const handleCopyPhone = (e, phone) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(phone);
+    setCopiedPhone(phone);
+    toast.success('Phone number copied');
+    setTimeout(() => setCopiedPhone(null), 2000);
+  };
+
   const handleLeadUpdated = (updatedLead) => {
     queryClient.invalidateQueries({ queryKey: ['leads'] });
     queryClient.invalidateQueries({ queryKey: ['stats'] });
@@ -288,13 +305,6 @@ export default function LeadsPage() {
 
   const toggleColumn = (colKey) => {
     setVisibleColumns((prev) => ({ ...prev, [colKey]: !prev[colKey] }));
-  };
-
-  const SortIcon = ({ column }) => {
-    if (sortBy !== column) return <ArrowUpDown size={12} className={styles.sortIcon} />;
-    return sortDir === 'asc'
-      ? <ArrowUp size={12} className={`${styles.sortIcon} ${styles.active}`} />
-      : <ArrowDown size={12} className={`${styles.sortIcon} ${styles.active}`} />;
   };
 
   return (
@@ -399,6 +409,12 @@ export default function LeadsPage() {
             </div>
           )}
 
+          {/* Import CSV */}
+          <Button variant="outline" size="sm" onClick={() => setIsImportModalOpen(true)} className={styles.toolBtn}>
+            <UploadCloud size={14} />
+            <span>Import CSV</span>
+          </Button>
+
           {/* Export CSV */}
           <Button variant="outline" size="sm" onClick={handleExport} className={styles.toolBtn}>
             <Download size={14} />
@@ -501,7 +517,7 @@ export default function LeadsPage() {
                         <th onClick={() => handleSort('full_name')} className={styles.sortableTh}>
                           <span className={styles.thContent}>
                             Lead Name & Tier
-                            <SortIcon column="full_name" />
+                            <SortIcon column="full_name" sortBy={sortBy} sortDir={sortDir} />
                           </span>
                         </th>
                       )}
@@ -510,7 +526,7 @@ export default function LeadsPage() {
                         <th onClick={() => handleSort('company_name')} className={styles.sortableTh}>
                           <span className={styles.thContent}>
                             Company & Domain
-                            <SortIcon column="company_name" />
+                            <SortIcon column="company_name" sortBy={sortBy} sortDir={sortDir} />
                           </span>
                         </th>
                       )}
@@ -519,7 +535,7 @@ export default function LeadsPage() {
                         <th onClick={() => handleSort('job_title')} className={styles.sortableTh}>
                           <span className={styles.thContent}>
                             Job Title
-                            <SortIcon column="job_title" />
+                            <SortIcon column="job_title" sortBy={sortBy} sortDir={sortDir} />
                           </span>
                         </th>
                       )}
@@ -528,7 +544,7 @@ export default function LeadsPage() {
                         <th onClick={() => handleSort('industry_classification')} className={styles.sortableTh}>
                           <span className={styles.thContent}>
                             Industry
-                            <SortIcon column="industry_classification" />
+                            <SortIcon column="industry_classification" sortBy={sortBy} sortDir={sortDir} />
                           </span>
                         </th>
                       )}
@@ -537,7 +553,7 @@ export default function LeadsPage() {
                         <th onClick={() => handleSort('employee_headcount')} className={styles.sortableTh}>
                           <span className={styles.thContent}>
                             Headcount
-                            <SortIcon column="employee_headcount" />
+                            <SortIcon column="employee_headcount" sortBy={sortBy} sortDir={sortDir} />
                           </span>
                         </th>
                       )}
@@ -546,7 +562,7 @@ export default function LeadsPage() {
                         <th onClick={() => handleSort('country')} className={styles.sortableTh}>
                           <span className={styles.thContent}>
                             HQ / Country
-                            <SortIcon column="country" />
+                            <SortIcon column="country" sortBy={sortBy} sortDir={sortDir} />
                           </span>
                         </th>
                       )}
@@ -555,7 +571,7 @@ export default function LeadsPage() {
                         <th onClick={() => handleSort('corporate_email')} className={styles.sortableTh}>
                           <span className={styles.thContent}>
                             Direct Contact
-                            <SortIcon column="corporate_email" />
+                            <SortIcon column="corporate_email" sortBy={sortBy} sortDir={sortDir} />
                           </span>
                         </th>
                       )}
@@ -564,7 +580,7 @@ export default function LeadsPage() {
                         <th onClick={() => handleSort('status')} className={styles.sortableTh}>
                           <span className={styles.thContent}>
                             Status
-                            <SortIcon column="status" />
+                            <SortIcon column="status" sortBy={sortBy} sortDir={sortDir} />
                           </span>
                         </th>
                       )}
@@ -573,7 +589,7 @@ export default function LeadsPage() {
                         <th onClick={() => handleSort('created_at')} className={styles.sortableTh}>
                           <span className={styles.thContent}>
                             Date Added
-                            <SortIcon column="created_at" />
+                            <SortIcon column="created_at" sortBy={sortBy} sortDir={sortDir} />
                           </span>
                         </th>
                       )}
@@ -690,38 +706,62 @@ export default function LeadsPage() {
                                   <span className={styles.tableCountryText}>{lead.country || '—'}</span>
                                 )}
                               </div>
-                            </td>
-                          )}
-
-                          {/* Contact */}
+                                             {/* Contact */}
                           {visibleColumns.contact && (
                             <td onClick={(e) => e.stopPropagation()}>
-                              {lead.corporate_email ? (
-                                <div className={styles.tableEmailGroup}>
-                                  <a 
-                                    href={`mailto:${lead.corporate_email}`}
-                                    className={styles.tableEmailLink}
-                                    title="Send email"
-                                  >
-                                    <Mail size={12} />
-                                    <span>{lead.corporate_email}</span>
-                                  </a>
-                                  <button 
-                                    className={styles.tableCopyBtn}
-                                    onClick={(e) => handleCopyEmail(e, lead.corporate_email)}
-                                    title="Copy email address"
-                                  >
-                                    {copiedEmail === lead.corporate_email ? (
-                                      <Check size={11} className={styles.copiedGreen} />
-                                    ) : (
-                                      <Copy size={11} />
-                                    )}
-                                  </button>
-                                </div>
-                              ) : (
-                                <span className={styles.mutedDash}>—</span>
-                              )}
+                              <div className={styles.tableContactStack}>
+                                {lead.corporate_email ? (
+                                  <div className={styles.tableEmailGroup}>
+                                    <a 
+                                      href={`mailto:${lead.corporate_email}`} 
+                                      className={styles.tableEmailLink}
+                                      title="Send email"
+                                    >
+                                      <Mail size={12} />
+                                      <span>{lead.corporate_email}</span>
+                                    </a>
+                                    <button 
+                                      className={styles.tableCopyBtn}
+                                      onClick={(e) => handleCopyEmail(e, lead.corporate_email)}
+                                      title="Copy email address"
+                                    >
+                                      {copiedEmail === lead.corporate_email ? (
+                                        <Check size={11} className={styles.copiedGreen} />
+                                      ) : (
+                                        <Copy size={11} />
+                                      )}
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <span className={styles.mutedDash}>—</span>
+                                )}
+
+                                {lead.contact_number && (
+                                  <div className={styles.tablePhoneGroup}>
+                                    <a
+                                      href={`tel:${lead.contact_number}`}
+                                      className={styles.tablePhoneLink}
+                                      title="Call contact number"
+                                    >
+                                      <Phone size={11} />
+                                      <span>{lead.contact_number}</span>
+                                    </a>
+                                    <button
+                                      className={styles.tableCopyBtn}
+                                      onClick={(e) => handleCopyPhone(e, lead.contact_number)}
+                                      title="Copy phone number"
+                                    >
+                                      {copiedPhone === lead.contact_number ? (
+                                        <Check size={11} className={styles.copiedGreen} />
+                                      ) : (
+                                        <Copy size={11} />
+                                      )}
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                             </td>
+                          )}               </td>
                           )}
 
                           {/* Status */}
@@ -804,6 +844,17 @@ export default function LeadsPage() {
         lead={selectedLead}
         onClose={() => setSelectedLead(null)}
         onLeadUpdated={handleLeadUpdated}
+      />
+
+      {/* CSV Import Modal */}
+      <ImportLeadsModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['leads'] });
+          queryClient.invalidateQueries({ queryKey: ['stats'] });
+          queryClient.invalidateQueries({ queryKey: ['leadsFilters'] });
+        }}
       />
     </div>
   );
