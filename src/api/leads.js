@@ -95,3 +95,15 @@ export const getFilters = async () => {
   const { data } = await client.get('/leads/filters');
   return data;
 };
+
+/**
+ * POST /leads/bulk-delete — Bulk delete leads matching specified criteria.
+ * @param {object} criteria — lead_ids, emails, email_domain, email_pattern,
+ *   status, channel, date_from, date_to, confirm
+ * @returns {Promise<{ message: string, deleted_count: number, deleted_ids: Array, criteria: object }>}
+ */
+export const bulkDeleteLeads = async (criteria) => {
+  const { data } = await client.post('/leads/bulk-delete', criteria);
+  return data;
+};
+

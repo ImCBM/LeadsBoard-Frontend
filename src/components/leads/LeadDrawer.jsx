@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   X, ExternalLink, Mail, Phone, Copy, Check, Globe, 
   Building2, MapPin, Users, ArrowRight, ShieldCheck,
-  Tag, CheckCircle2
+  Tag, CheckCircle2, Trash2
 } from 'lucide-react';
 
 const LinkedInIcon = ({ size = 15 }) => (
@@ -16,6 +16,7 @@ import * as leadsApi from '../../api/leads';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import StatusBadge from '../ui/StatusBadge';
+import DeleteLeadModal from './DeleteLeadModal';
 import styles from './LeadDrawer.module.css';
 
 const STATUS_OPTIONS = [
@@ -25,12 +26,14 @@ const STATUS_OPTIONS = [
   { key: 'rejected', label: 'Rejected', color: 'rejected' },
 ];
 
-export default function LeadDrawer({ lead, onClose, onLeadUpdated }) {
+export default function LeadDrawer({ lead, onClose, onLeadUpdated, onLeadDeleted }) {
   const navigate = useNavigate();
   const [copiedField, setCopiedField] = useState(null);
   const [status, setStatus] = useState(lead?.status || 'new');
   const [notes, setNotes] = useState(lead?.notes || '');
   const [saving, setSaving] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (lead) {
@@ -40,6 +43,21 @@ export default function LeadDrawer({ lead, onClose, onLeadUpdated }) {
   }, [lead]);
 
   if (!lead) return null;
+
+  const handleDeleteLead = async () => {
+    try {
+      setIsDeleting(true);
+      await leadsApi.deleteLead(lead.id);
+      toast.success('Lead permanently deleted');
+      setShowDeleteModal(false);
+      onClose();
+      if (onLeadDeleted) onLeadDeleted(lead.id);
+    } catch {
+      toast.error('Failed to delete lead');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const copyToClipboard = (text, fieldName) => {
     if (!text) return;
@@ -337,8 +355,27 @@ export default function LeadDrawer({ lead, onClose, onLeadUpdated }) {
             <span>Full Profile View</span>
             <ArrowRight size={14} />
           </Button>
+
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={() => setShowDeleteModal(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+          >
+            <Trash2 size={14} />
+            <span>Delete Lead</span>
+          </Button>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteLeadModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteLead}
+        lead={lead}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }

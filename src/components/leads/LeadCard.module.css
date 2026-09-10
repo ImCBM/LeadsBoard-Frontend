@@ -295,7 +295,27 @@
 }
 
 .viewBtn:hover {
-  background-color: var(--primary);
-  color: var(--on-primary);
+  color: var(--primary);
   border-color: var(--primary);
+  background-color: var(--primary-container);
+}
+
+.cardCheckbox {
+  accent-color: var(--primary, #1fa97d);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.deleteIconBtn {
+  color: var(--on-surface-variant);
+  transition: all var(--transition-fast);
+}
+
+.deleteIconBtn:hover {
+  color: var(--error, #c13f2c) !important;
+  background-color: var(--error-container, #fad9d0) !important;
+  border-color: #f3bcaf !important;
 }

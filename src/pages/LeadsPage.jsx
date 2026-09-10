@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Download, UploadCloud, Phone, ArrowUpDown, ArrowUp, ArrowDown, 
   ExternalLink, Mail, Copy, Check, Users, MapPin, 
-  Globe, SlidersHorizontal, Eye, X, Building2,
+  Globe, SlidersHorizontal, Eye, X, Building2, Trash2,
   LayoutGrid, Table as TableIcon
 } from 'lucide-react';
 
@@ -32,6 +32,8 @@ import LeadSkeleton from '../components/leads/LeadSkeleton';
 import FilterToolbar from '../components/leads/FilterToolbar';
 import AdvancedFilterPanel from '../components/leads/AdvancedFilterPanel';
 import ImportLeadsModal from '../components/leads/ImportLeadsModal';
+import DeleteLeadModal from '../components/leads/DeleteLeadModal';
+import CleanupOperationsModal from '../components/leads/CleanupOperationsModal';
 import styles from './LeadsPage.module.css';
 
 const DEFAULT_VISIBLE_COLUMNS = {
@@ -307,6 +309,79 @@ export default function LeadsPage() {
     setVisibleColumns((prev) => ({ ...prev, [colKey]: !prev[colKey] }));
   };
 
+  // Selection and Deletion state
+  const [selectedLeadIds, setSelectedLeadIds] = useState(new Set());
+  const [leadToDelete, setLeadToDelete] = useState(null);
+  const [isDeletingSingle, setIsDeletingSingle] = useState(false);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [showCleanupModal, setShowCleanupModal] = useState(false);
+
+  const toggleLeadCheck = (id) => {
+    setSelectedLeadIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAllPage = () => {
+    if (leads.length === 0) return;
+    const allPageSelected = leads.every((l) => selectedLeadIds.has(l.id));
+    setSelectedLeadIds((prev) => {
+      const next = new Set(prev);
+      if (allPageSelected) {
+        leads.forEach((l) => next.delete(l.id));
+      } else {
+        leads.forEach((l) => next.add(l.id));
+      }
+      return next;
+    });
+  };
+
+  const handleSingleDeleteConfirm = async (id) => {
+    try {
+      setIsDeletingSingle(true);
+      await leadsApi.deleteLead(id);
+      toast.success('Lead permanently deleted');
+      setLeadToDelete(null);
+      if (selectedLead?.id === id) setSelectedLead(null);
+      setSelectedLeadIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+    } catch {
+      toast.error('Failed to delete lead');
+    } finally {
+      setIsDeletingSingle(false);
+    }
+  };
+
+  const handleBulkDeleteConfirm = async (ids) => {
+    try {
+      setIsBulkDeleting(true);
+      const res = await leadsApi.bulkDeleteLeads({ lead_ids: ids });
+      const count = res?.deleted_count ?? ids.length;
+      toast.success(`${count} ${count === 1 ? 'lead' : 'leads'} permanently deleted`);
+      setShowBulkDeleteModal(false);
+      setSelectedLeadIds(new Set());
+      if (selectedLead && ids.includes(selectedLead.id)) setSelectedLead(null);
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+    } catch {
+      toast.error('Failed to delete selected leads');
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
   return (
     <div className={styles.page}>
       {/* ── Page Header ── */}
@@ -420,6 +495,12 @@ export default function LeadsPage() {
             <Download size={14} />
             <span>Export CSV</span>
           </Button>
+
+          {/* Clean Up Leads */}
+          <Button variant="outline" size="sm" onClick={() => setShowCleanupModal(true)} className={`${styles.toolBtn} ${styles.cleanupBtn}`}>
+            <Trash2 size={14} />
+            <span>Clean Up Leads</span>
+          </Button>
         </div>
       </div>
 
@@ -496,6 +577,9 @@ export default function LeadsPage() {
                     lead={lead} 
                     onSelect={setSelectedLead}
                     isSelected={selectedLead?.id === lead.id}
+                    isChecked={selectedLeadIds.has(lead.id)}
+                    onToggleCheck={toggleLeadCheck}
+                    onDelete={(l) => setLeadToDelete(l)}
                   />
                 ))}
               </div>
@@ -513,6 +597,23 @@ export default function LeadsPage() {
                 <table className={styles.table}>
                   <thead>
                     <tr>
+                      <th className={styles.tableSelectTh}>
+                        <input
+                          type="checkbox"
+                          className={styles.tableCheckbox}
+                          checked={leads.length > 0 && leads.every((l) => selectedLeadIds.has(l.id))}
+                          ref={(el) => {
+                            if (el) {
+                              const hasSome = leads.some((l) => selectedLeadIds.has(l.id));
+                              const hasAll = leads.length > 0 && leads.every((l) => selectedLeadIds.has(l.id));
+                              el.indeterminate = hasSome && !hasAll;
+                            }
+                          }}
+                          onChange={toggleSelectAllPage}
+                          title="Select all on this page"
+                        />
+                      </th>
+
                       {visibleColumns.name && (
                         <th onClick={() => handleSort('full_name')} className={styles.sortableTh}>
                           <span className={styles.thContent}>
@@ -610,6 +711,16 @@ export default function LeadsPage() {
                           className={`${styles.tableRow} ${isSelected ? styles.selectedRow : ''}`}
                           onClick={() => setSelectedLead(lead)}
                         >
+                          <td className={styles.tableSelectTd} onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              className={styles.tableCheckbox}
+                              checked={selectedLeadIds.has(lead.id)}
+                              onChange={() => toggleLeadCheck(lead.id)}
+                              title="Select prospect"
+                            />
+                          </td>
+
                           {/* Lead Name & Tier */}
                           {visibleColumns.name && (
                             <td className={styles.stickyNameCell}>
@@ -815,6 +926,17 @@ export default function LeadsPage() {
                                 >
                                   <Eye size={14} />
                                 </button>
+
+                                <button
+                                  className={`${styles.tableActionIconBtn} ${styles.rowDeleteBtn}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setLeadToDelete(lead);
+                                  }}
+                                  title="Permanently Delete Prospect"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
                               </div>
                             </td>
                           )}
@@ -844,6 +966,16 @@ export default function LeadsPage() {
         lead={selectedLead}
         onClose={() => setSelectedLead(null)}
         onLeadUpdated={handleLeadUpdated}
+        onLeadDeleted={(deletedId) => {
+          setSelectedLead(null);
+          setSelectedLeadIds((prev) => {
+            const next = new Set(prev);
+            next.delete(deletedId);
+            return next;
+          });
+          queryClient.invalidateQueries({ queryKey: ['leads'] });
+          queryClient.invalidateQueries({ queryKey: ['stats'] });
+        }}
       />
 
       {/* CSV Import Modal */}
@@ -855,6 +987,67 @@ export default function LeadsPage() {
           queryClient.invalidateQueries({ queryKey: ['stats'] });
           queryClient.invalidateQueries({ queryKey: ['leadsFilters'] });
         }}
+      />
+
+      {/* ── Floating Batch Action Bar ── */}
+      {selectedLeadIds.size > 0 && (
+        <div className={styles.batchBar}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className={styles.batchCountBadge}>{selectedLeadIds.size}</span>
+            <span>{selectedLeadIds.size === 1 ? 'prospect selected' : 'prospects selected'}</span>
+          </div>
+
+          <div className={styles.batchActionsGroup}>
+            <button className={styles.batchDeselectBtn} onClick={() => setSelectedLeadIds(new Set())}>
+              Deselect All
+            </button>
+            <button className={styles.batchDeleteBtn} onClick={() => setShowBulkDeleteModal(true)}>
+              <Trash2 size={13} />
+              <span>Delete Selected ({selectedLeadIds.size})</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Single Lead Delete Confirmation Modal */}
+      <DeleteLeadModal
+        isOpen={Boolean(leadToDelete)}
+        onClose={() => setLeadToDelete(null)}
+        onConfirm={handleSingleDeleteConfirm}
+        lead={leadToDelete}
+        isDeleting={isDeletingSingle}
+      />
+
+      {/* Multi-Select Bulk Delete Confirmation Modal */}
+      <DeleteLeadModal
+        isOpen={showBulkDeleteModal}
+        onClose={() => setShowBulkDeleteModal(false)}
+        onConfirm={handleBulkDeleteConfirm}
+        leadIds={Array.from(selectedLeadIds)}
+        leadsPreview={leads.filter((l) => selectedLeadIds.has(l.id))}
+        isDeleting={isBulkDeleting}
+      />
+
+      {/* Comprehensive Cleanup Operations Modal */}
+      <CleanupOperationsModal
+        isOpen={showCleanupModal}
+        onClose={() => setShowCleanupModal(false)}
+        onSuccess={() => {
+          setSelectedLeadIds(new Set());
+          queryClient.invalidateQueries({ queryKey: ['leads'] });
+          queryClient.invalidateQueries({ queryKey: ['stats'] });
+        }}
+        activeFilters={{
+          search: debouncedSearch,
+          status,
+          titleTier,
+          industry,
+          country,
+          channel,
+          dateFrom,
+          dateTo,
+        }}
+        totalFilteredCount={pagination.total}
       />
     </div>
   );

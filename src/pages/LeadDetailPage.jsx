@@ -6,6 +6,7 @@ import * as leadsApi from '../api/leads';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import StatusBadge from '../components/ui/StatusBadge';
+import DeleteLeadModal from '../components/leads/DeleteLeadModal';
 import styles from './LeadDetailPage.module.css';
 
 const STATUS_OPTIONS = ['new', 'reviewed', 'qualified', 'rejected'];
@@ -195,22 +196,13 @@ export default function LeadDetailPage() {
       </div>
 
       {/* Delete Confirmation Modal */}
-      {showDelete && (
-        <div className={styles.modalOverlay} onClick={() => setShowDelete(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h2 className={styles.modalTitle}>Delete Lead</h2>
-            <p className={styles.modalText}>
-              Are you sure you want to delete <strong>{lead.full_name}</strong>? This action cannot be undone.
-            </p>
-            <div className={styles.modalActions}>
-              <Button variant="ghost" onClick={() => setShowDelete(false)}>Cancel</Button>
-              <Button variant="danger" onClick={handleDelete} disabled={deleting}>
-                {deleting ? 'Deleting…' : 'Delete'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteLeadModal
+        isOpen={showDelete}
+        onClose={() => setShowDelete(false)}
+        onConfirm={handleDelete}
+        lead={lead}
+        isDeleting={deleting}
+      />
     </div>
   );
 }
