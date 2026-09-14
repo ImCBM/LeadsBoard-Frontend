@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Users, Globe, MapPin, Building2,
-  Sparkles, Search, X, ChevronDown
+  Sparkles, Search, X, ChevronDown, Tag as TagIcon
 } from 'lucide-react';
 import styles from './AdvancedFilterPanel.module.css';
 
@@ -210,7 +210,13 @@ export default function AdvancedFilterPanel({
     emailStatus = '',
     dateFrom = '',
     dateTo = '',
+    tag = '',
   } = filters || {};
+
+  const publicTags = useMemo(() => {
+    const all = filterOptions.tags || [];
+    return all.filter((t) => t.type !== 'system');
+  }, [filterOptions.tags]);
 
   const availableCountries = useMemo(() => {
     if (!isOpen) return [];
@@ -450,6 +456,47 @@ export default function AdvancedFilterPanel({
               onChange={(e) => handleChange('dateTo', e.target.value)}
               title="Date to"
             />
+          </div>
+        </div>
+
+        {/* ── Block 5: Public Tags & Segments ── */}
+        <div className={styles.fullWidthBlock}>
+          <div className={styles.blockHeader}>
+            <TagIcon size={13} className={styles.blockIcon} />
+            <span className={styles.blockTitle}>Public Tags</span>
+          </div>
+          <div className={styles.chipRow} style={{ flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className={`${styles.miniChip} ${!tag ? styles.miniChipActive : ''}`}
+              onClick={() => handleChange('tag', '')}
+            >
+              All Tags
+            </button>
+            {publicTags.map((t) => {
+              const isActive = (tag || '') === t.slug || (tag || '') === t.name;
+              return (
+                <button
+                  key={t.id || t.slug}
+                  type="button"
+                  className={`${styles.miniChip} ${isActive ? styles.miniChipActive : ''}`}
+                  onClick={() => handleChange('tag', isActive ? '' : (t.slug || t.name))}
+                  title={t.description || t.name}
+                >
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      backgroundColor: t.color || '#1fa97d',
+                      marginRight: '6px',
+                    }}
+                  />
+                  {t.name}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -370,3 +370,142 @@
   align-items: center;
   gap: 6px;
 }
+
+/* Tags Management */
+.tagsHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.tagsContainer {
+  background-color: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tagsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.tagChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.tagChipDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tagChipRemove {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.6;
+  border-radius: 50%;
+  transition: opacity 0.15s ease;
+}
+
+.tagChipRemove:hover {
+  opacity: 1;
+}
+
+.emptyTagsText {
+  font-size: 12px;
+  color: var(--on-surface-variant);
+  font-style: italic;
+}
+
+.addTagWrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.addTagTriggerBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 500;
+  background: none;
+  border: 1px dashed var(--outline);
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.addTagTriggerBtn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background-color: var(--surface-container);
+}
+
+.tagDropdownMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 200px;
+  max-width: 260px;
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--surface-container-high);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  padding: 4px;
+}
+
+.tagDropdownItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--on-surface);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.tagDropdownItem:hover {
+  background-color: var(--surface-container-highest);
+}
+
+.tagDropdownEmpty {
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--on-surface-variant);
+  text-align: center;
+}
+

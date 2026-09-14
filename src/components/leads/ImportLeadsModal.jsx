@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import {
-  UploadCloud, FileText, X, Download, Loader2, RefreshCw
+  UploadCloud, FileText, X, Download, Loader2, RefreshCw, Copy, Check
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as leadsApi from '../../api/leads';
@@ -13,7 +13,54 @@ export default function ImportLeadsModal({ isOpen, onClose, onSuccess }) {
   const [isUploading, setIsUploading] = useState(false);
   const [result, setResult] = useState(null);
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'duplicates' | 'errors' | 'inserted'
+  const [copiedBatch, setCopiedBatch] = useState(false);
   const fileInputRef = useRef(null);
+
+  const summary = useMemo(() => {
+    if (!result) return { total: 0, inserted: 0, duplicates: 0, errors: 0 };
+    return result.summary || {
+      total: result.total ?? 0,
+      inserted: result.inserted ?? 0,
+      duplicates: result.duplicates ?? 0,
+      errors: result.errors ?? 0,
+    };
+  }, [result]);
+
+  const details = useMemo(() => {
+    if (!result) return [];
+    if (Array.isArray(result.details) && result.details.length > 0) {
+      return result.details;
+    }
+    const list = [];
+    if (Array.isArray(result.duplicates_detail)) {
+      result.duplicates_detail.forEach((d) => {
+        list.push({
+          row: d.row,
+          status: 'duplicate',
+          name: d.name || 'Lead',
+          email: d.email,
+          phone: d.contact_number,
+          duplicate_field: d.duplicate_field || (d.duplicate_fields?.[0]),
+          message: d.reason || `Duplicate lead detected: ${d.duplicate_field || 'record'} already exists in the database.`,
+        });
+      });
+    }
+    if (Array.isArray(result.errors_detail)) {
+      result.errors_detail.forEach((e) => {
+        list.push({
+          row: e.row,
+          status: 'error',
+          name: e.name || `Row ${e.row}`,
+          email: e.email,
+          phone: e.phone,
+          message: Array.isArray(e.errors)
+            ? e.errors.join('; ')
+            : (typeof e.errors === 'object' && e.errors !== null ? Object.values(e.errors).flat().join('; ') : 'Validation error'),
+        });
+      });
+    }
+    return list.sort((a, b) => a.row - b.row);
+  }, [result]);
 
   if (!isOpen) return null;
 
@@ -81,9 +128,12 @@ export default function ImportLeadsModal({ isOpen, onClose, onSuccess }) {
     try {
       const res = await leadsApi.importCsv(file);
       setResult(res);
-      if (res.summary?.inserted > 0) {
-        toast.success(`Successfully imported ${res.summary.inserted} leads!`);
-      } else if (res.summary?.duplicates > 0) {
+      const insertedCount = res.summary?.inserted ?? (res.inserted ?? 0);
+      const dupCount = res.summary?.duplicates ?? (res.duplicates ?? 0);
+
+      if (insertedCount > 0) {
+        toast.success(`Successfully imported ${insertedCount} leads!`);
+      } else if (dupCount > 0) {
         toast('Import completed with duplicate skips.', { icon: '⚠️' });
       } else {
         toast.error('No leads could be imported.');
@@ -96,8 +146,16 @@ export default function ImportLeadsModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
+  const handleCopyBatchId = () => {
+    if (!result?.batch_id) return;
+    navigator.clipboard.writeText(result.batch_id);
+    setCopiedBatch(true);
+    toast.success('Batch ID copied to clipboard');
+    setTimeout(() => setCopiedBatch(false), 2000);
+  };
+
   const handleClose = () => {
-    if (result && result.summary?.inserted > 0) {
+    if (summary.inserted > 0) {
       onSuccess?.();
     }
     setFile(null);
@@ -105,7 +163,6 @@ export default function ImportLeadsModal({ isOpen, onClose, onSuccess }) {
     onClose();
   };
 
-  const details = result?.details || [];
   const filteredDetails = details.filter((item) => {
     if (activeTab === 'inserted') return item.status === 'inserted';
     if (activeTab === 'duplicates') return item.status === 'duplicate';
@@ -145,21 +202,31 @@ export default function ImportLeadsModal({ isOpen, onClose, onSuccess }) {
           ) : result ? (
             /* Results Breakdown */
             <>
+              {result.batch_id && (
+                <div className={styles.batchIdBanner}>
+                  <span>Ingestion Batch: <code className={styles.batchIdCode}>{result.batch_id}</code></span>
+                  <button className={styles.copyBatchBtn} onClick={handleCopyBatchId}>
+                    {copiedBatch ? <Check size={12} /> : <Copy size={12} />}
+                    <span>{copiedBatch ? 'Copied' : 'Copy ID'}</span>
+                  </button>
+                </div>
+              )}
+
               <div className={styles.resultsGrid}>
                 <div className={styles.resultStat}>
-                  <div className={styles.statNumber}>{result.summary?.total ?? 0}</div>
+                  <div className={styles.statNumber}>{summary.total}</div>
                   <div className={styles.statLabel}>Total Rows</div>
                 </div>
                 <div className={`${styles.resultStat} ${styles.success}`}>
-                  <div className={styles.statNumber}>{result.summary?.inserted ?? 0}</div>
+                  <div className={styles.statNumber}>{summary.inserted}</div>
                   <div className={styles.statLabel}>Inserted</div>
                 </div>
                 <div className={`${styles.resultStat} ${styles.duplicates}`}>
-                  <div className={styles.statNumber}>{result.summary?.duplicates ?? 0}</div>
+                  <div className={styles.statNumber}>{summary.duplicates}</div>
                   <div className={styles.statLabel}>Duplicates</div>
                 </div>
                 <div className={`${styles.resultStat} ${styles.errors}`}>
-                  <div className={styles.statNumber}>{result.summary?.errors ?? 0}</div>
+                  <div className={styles.statNumber}>{summary.errors}</div>
                   <div className={styles.statLabel}>Errors</div>
                 </div>
               </div>
@@ -182,21 +249,21 @@ export default function ImportLeadsModal({ isOpen, onClose, onSuccess }) {
                         className={`${styles.filterPill} ${activeTab === 'duplicates' ? styles.filterPillActive : ''}`}
                         onClick={() => setActiveTab('duplicates')}
                       >
-                        Duplicates ({result.summary?.duplicates ?? 0})
+                        Duplicates ({summary.duplicates})
                       </button>
                       <button
                         type="button"
                         className={`${styles.filterPill} ${activeTab === 'errors' ? styles.filterPillActive : ''}`}
                         onClick={() => setActiveTab('errors')}
                       >
-                        Errors ({result.summary?.errors ?? 0})
+                        Errors ({summary.errors})
                       </button>
                       <button
                         type="button"
                         className={`${styles.filterPill} ${activeTab === 'inserted' ? styles.filterPillActive : ''}`}
                         onClick={() => setActiveTab('inserted')}
                       >
-                        Inserted ({result.summary?.inserted ?? 0})
+                        Inserted ({summary.inserted})
                       </button>
                     </div>
                   </div>
@@ -206,11 +273,20 @@ export default function ImportLeadsModal({ isOpen, onClose, onSuccess }) {
                       <div key={idx} className={styles.logItem}>
                         <span className={styles.rowBadge}>Row {item.row}</span>
                         <div className={styles.logItemContent}>
-                          <div>
+                          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
                             <span className={styles.logName}>{item.name}</span>
                             {(item.email || item.phone) && (
                               <span className={styles.logContact}>
                                 {item.email} {item.phone ? `· ${item.phone}` : ''}
+                              </span>
+                            )}
+                            {item.duplicate_field && (
+                              <span className={styles.conflictBadge}>
+                                {item.duplicate_field === 'contact_number'
+                                  ? 'Phone Duplicate'
+                                  : item.duplicate_field === 'corporate_email'
+                                  ? 'Email Duplicate'
+                                  : 'Email & Phone Duplicate'}
                               </span>
                             )}
                           </div>

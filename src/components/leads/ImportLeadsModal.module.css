@@ -404,6 +404,55 @@
   color: #c13f2c;
 }
 
+.conflictBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #ffedd5;
+  color: #9a3412;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+
+.batchIdBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface-container-low, #f8f6f0);
+  border: 1px solid var(--outline-variant, #dfd9c4);
+  border-radius: var(--radius-sm, 6px);
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  color: var(--on-surface-variant, #52584a);
+}
+
+.batchIdCode {
+  font-family: monospace;
+  color: var(--on-surface, #1e2a22);
+  font-weight: 600;
+}
+
+.copyBatchBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--primary, #1fa97d);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.copyBatchBtn:hover {
+  background: var(--surface-container, #eeeadb);
+}
+
 /* ── Footer ── */
 .footer {
   display: flex;
@@ -414,3 +463,4 @@
   border-top: 1px solid var(--outline-variant, #dfd9c4);
   background: var(--surface-container-lowest, #ffffff);
 }
+

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
-  Trash2, AlertTriangle, ShieldCheck, X, Loader2 
+  Trash2, Tag as TagIcon, AlertTriangle, ShieldCheck, X 
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as leadsApi from '../../api/leads';
@@ -14,9 +14,18 @@ export default function CleanupOperationsModal({
   activeFilters = {},
   totalFilteredCount = 0,
 }) {
-  const [activeTab, setActiveTab] = useState('filters'); // 'filters' | 'domain' | 'status' | 'wipe'
-  const [isDeleting, setIsDeleting] = useState(false);
+  // Operation mode: 'delete' (Delete Leads) or 'tag' (Retroactive Bulk Tagging)
+  const [actionType, setActionType] = useState('delete');
+
+  // Active criteria tab
+  const [activeTab, setActiveTab] = useState('filters'); // 'filters' | 'id_ranges' | 'domain' | 'tag_target' | 'status' | 'wipe'
+  const [isProcessing, setIsProcessing] = useState(false);
   const [confirmText, setConfirmText] = useState('');
+
+  // ID Ranges tab fields
+  const [idRangesText, setIdRangesText] = useState('');
+  const [idFrom, setIdFrom] = useState('');
+  const [idTo, setIdTo] = useState('');
 
   // Domain tab fields
   const [domainMode, setDomainMode] = useState('exact'); // 'exact' | 'pattern' | 'list'
@@ -24,40 +33,45 @@ export default function CleanupOperationsModal({
   const [emailPattern, setEmailPattern] = useState('');
   const [emailsText, setEmailsText] = useState('');
 
+  // Tag Target tab fields
+  const [targetTag, setTargetTag] = useState('');
+
   // Status & Date tab fields
   const [statusVal, setStatusVal] = useState('rejected');
   const [channelVal, setChannelVal] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
+  // Tag Action fields (for 'tag' mode)
+  const [tagOpMode, setTagOpMode] = useState('add'); // 'add' | 'remove' | 'sync'
+  const [tagsToApplyText, setTagsToApplyText] = useState('');
+
   useEffect(() => {
     if (isOpen) {
       setConfirmText('');
     }
-  }, [isOpen, activeTab]);
+  }, [isOpen, activeTab, actionType]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen && !isDeleting) {
+      if (e.key === 'Escape' && isOpen && !isProcessing) {
         onClose();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, isDeleting, onClose]);
+  }, [isOpen, isProcessing, onClose]);
 
   if (!isOpen) return null;
 
+  const isDeleteMode = actionType === 'delete';
   const requiredConfirmation = activeTab === 'wipe' ? 'WIPE ALL LEADS' : 'DELETE';
-  const isConfirmed = confirmText.trim().toUpperCase() === requiredConfirmation;
+  const isConfirmed = !isDeleteMode || confirmText.trim().toUpperCase() === requiredConfirmation;
 
-  const handleSubmit = async () => {
-    if (!isConfirmed || isDeleting) return;
-
+  const buildCriteria = () => {
     let payload = {};
 
     if (activeTab === 'filters') {
-      // Build criteria from active filters
       payload = {
         search: activeFilters.search || undefined,
         status: activeFilters.status || undefined,
@@ -65,22 +79,34 @@ export default function CleanupOperationsModal({
         industry: activeFilters.industry || undefined,
         country: activeFilters.country || undefined,
         channel: activeFilters.channel || undefined,
+        tag: activeFilters.tag || undefined,
         date_from: activeFilters.dateFrom || undefined,
         date_to: activeFilters.dateTo || undefined,
       };
+    } else if (activeTab === 'id_ranges') {
+      const ranges = idRangesText
+        .split(/[\n,]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      if (ranges.length > 0) {
+        payload.id_ranges = ranges;
+      }
+      if (idFrom) payload.id_from = parseInt(idFrom, 10);
+      if (idTo) payload.id_to = parseInt(idTo, 10);
     } else if (activeTab === 'domain') {
       if (domainMode === 'exact') {
         if (!emailDomain.trim()) {
           toast.error('Please specify an email domain (e.g. example.com)');
-          return;
+          return null;
         }
-        payload = { email_domain: emailDomain.trim().replace(/^@/, '') };
+        payload.email_domain = emailDomain.trim().replace(/^@/, '');
       } else if (domainMode === 'pattern') {
         if (!emailPattern.trim()) {
           toast.error('Please specify a wildcard pattern (e.g. %@test%)');
-          return;
+          return null;
         }
-        payload = { email_pattern: emailPattern.trim() };
+        payload.email_pattern = emailPattern.trim();
       } else if (domainMode === 'list') {
         const list = emailsText
           .split(/[\n,]+/)
@@ -88,10 +114,16 @@ export default function CleanupOperationsModal({
           .filter(Boolean);
         if (list.length === 0) {
           toast.error('Please provide at least one email address');
-          return;
+          return null;
         }
-        payload = { emails: list };
+        payload.emails = list;
       }
+    } else if (activeTab === 'tag_target') {
+      if (!targetTag.trim()) {
+        toast.error('Please specify a tag name or slug (e.g. test, demo, legacy)');
+        return null;
+      }
+      payload.tag = targetTag.trim();
     } else if (activeTab === 'status') {
       payload = {
         status: statusVal || undefined,
@@ -105,79 +137,165 @@ export default function CleanupOperationsModal({
       };
     }
 
+    return payload;
+  };
+
+  const handleSubmit = async () => {
+    if (!isConfirmed || isProcessing) return;
+
+    const criteria = buildCriteria();
+    if (!criteria) return;
+
+    // Check if empty criteria (excluding wipe)
+    if (activeTab !== 'wipe' && Object.keys(criteria).length === 0) {
+      toast.error('Please specify at least one targeting condition');
+      return;
+    }
+
     try {
-      setIsDeleting(true);
-      const res = await leadsApi.bulkDeleteLeads(payload);
-      const deletedCount = res?.deleted_count ?? 0;
-      toast.success(`Cleanup complete: ${deletedCount} ${deletedCount === 1 ? 'lead' : 'leads'} permanently removed.`);
-      if (onSuccess) onSuccess(deletedCount);
-      onClose();
+      setIsProcessing(true);
+
+      if (isDeleteMode) {
+        const res = await leadsApi.bulkDeleteLeads(criteria);
+        const count = res?.deleted_count ?? 0;
+        toast.success(`Cleanup complete: ${count} ${count === 1 ? 'lead' : 'leads'} permanently removed.`);
+        if (onSuccess) onSuccess(count);
+        onClose();
+      } else {
+        // Tagging Mode
+        const tags = tagsToApplyText
+          .split(/[\n,]+/)
+          .map((t) => t.trim())
+          .filter(Boolean);
+
+        if (tags.length === 0) {
+          toast.error('Please specify at least one tag to apply');
+          setIsProcessing(false);
+          return;
+        }
+
+        const tagPayload = { ...criteria };
+        if (tagOpMode === 'add') tagPayload.add_tags = tags;
+        if (tagOpMode === 'remove') tagPayload.remove_tags = tags;
+        if (tagOpMode === 'sync') tagPayload.sync_tags = tags;
+
+        const res = await leadsApi.bulkTagLeads(tagPayload);
+        const count = res?.updated_count ?? 0;
+        toast.success(`Bulk tagging complete: ${count} ${count === 1 ? 'lead' : 'leads'} updated.`);
+        if (onSuccess) onSuccess(count);
+        onClose();
+      }
     } catch (err) {
-      const errMsg = err?.response?.data?.message || err?.response?.data?.error || 'Failed to complete cleanup operation';
+      const errMsg = err?.response?.data?.message || err?.response?.data?.error || 'Operation failed';
       toast.error(errMsg);
     } finally {
-      setIsDeleting(false);
+      setIsProcessing(false);
     }
   };
 
   return (
-    <div className={styles.modalOverlay} onClick={isDeleting ? undefined : onClose}>
+    <div className={styles.modalOverlay} onClick={isProcessing ? undefined : onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className={styles.modalHeader}>
-          <div className={styles.headerIcon}>
-            <Trash2 size={22} />
+          <div className={`${styles.headerIcon} ${isDeleteMode ? styles.deleteMode : styles.tagMode}`}>
+            {isDeleteMode ? <Trash2 size={22} /> : <TagIcon size={22} />}
           </div>
           <div className={styles.headerContent}>
-            <h2 className={styles.modalTitle}>Lead Cleanup Operations</h2>
+            <h2 className={styles.modalTitle}>
+              {isDeleteMode ? 'Lead Cleanup Operations' : 'Retroactive Bulk Tagging'}
+            </h2>
             <p className={styles.modalSubtitle}>
-              Targeted bulk removal and pipeline maintenance
+              {isDeleteMode
+                ? 'Targeted bulk removal and staging database maintenance'
+                : 'Backfill or manage tags across matching lead segments'}
             </p>
           </div>
-          {!isDeleting && (
+          {!isProcessing && (
             <button className={styles.closeButton} onClick={onClose} aria-label="Close">
               <X size={18} />
             </button>
           )}
         </div>
 
+        {/* Operation Bar (Toggle between Delete and Tag) */}
+        <div className={styles.operationBar}>
+          <span className={styles.operationLabel}>Action:</span>
+          <button
+            type="button"
+            className={`${styles.opTypeBtn} ${isDeleteMode ? styles.activeDelete : ''}`}
+            onClick={() => {
+              setActionType('delete');
+              if (activeTab === 'wipe') setActiveTab('filters');
+            }}
+          >
+            <Trash2 size={13} />
+            <span>Bulk Delete Leads</span>
+          </button>
+          <button
+            type="button"
+            className={`${styles.opTypeBtn} ${!isDeleteMode ? styles.activeTag : ''}`}
+            onClick={() => {
+              setActionType('tag');
+              if (activeTab === 'wipe') setActiveTab('filters');
+            }}
+          >
+            <TagIcon size={13} />
+            <span>Bulk Tag / Backfill</span>
+          </button>
+        </div>
+
         {/* Navigation Tabs */}
         <div className={styles.tabsBar}>
           <button
-            className={`${styles.tabBtn} ${activeTab === 'filters' ? styles.active : ''}`}
+            className={`${styles.tabBtn} ${activeTab === 'filters' ? (isDeleteMode ? styles.active : styles.activeTagTab) : ''}`}
             onClick={() => setActiveTab('filters')}
           >
-            Match Current Filters
+            Match Active Filters
           </button>
           <button
-            className={`${styles.tabBtn} ${activeTab === 'domain' ? styles.active : ''}`}
+            className={`${styles.tabBtn} ${activeTab === 'id_ranges' ? (isDeleteMode ? styles.active : styles.activeTagTab) : ''}`}
+            onClick={() => setActiveTab('id_ranges')}
+          >
+            ID Ranges & Bounds
+          </button>
+          <button
+            className={`${styles.tabBtn} ${activeTab === 'domain' ? (isDeleteMode ? styles.active : styles.activeTagTab) : ''}`}
             onClick={() => setActiveTab('domain')}
           >
-            Email Domain & Pattern
+            Email & Domain
           </button>
           <button
-            className={`${styles.tabBtn} ${activeTab === 'status' ? styles.active : ''}`}
+            className={`${styles.tabBtn} ${activeTab === 'tag_target' ? (isDeleteMode ? styles.active : styles.activeTagTab) : ''}`}
+            onClick={() => setActiveTab('tag_target')}
+          >
+            Target by Tag
+          </button>
+          <button
+            className={`${styles.tabBtn} ${activeTab === 'status' ? (isDeleteMode ? styles.active : styles.activeTagTab) : ''}`}
             onClick={() => setActiveTab('status')}
           >
-            Status & Date Window
+            Status, Channel & Date
           </button>
-          <button
-            className={`${styles.tabBtn} ${activeTab === 'wipe' ? styles.active : ''}`}
-            onClick={() => setActiveTab('wipe')}
-          >
-            Reset Database
-          </button>
+          {isDeleteMode && (
+            <button
+              className={`${styles.tabBtn} ${activeTab === 'wipe' ? styles.active : ''}`}
+              onClick={() => setActiveTab('wipe')}
+            >
+              Reset Database
+            </button>
+          )}
         </div>
 
         {/* Body */}
         <div className={styles.modalBody}>
-          {/* TAB 1: CURRENT FILTERS */}
+          {/* TAB 1: CURRENT ACTIVE FILTERS */}
           {activeTab === 'filters' && (
             <>
               <div className={styles.criteriaSummaryCard}>
                 <span className={styles.criteriaTitle}>Target Criteria: Current Active Filters</span>
                 <p style={{ margin: 0, fontSize: '0.8rem', color: '#52584a' }}>
-                  Deletes all leads currently matching your pipeline filters:
+                  Targets all prospects matching your current pipeline view:
                 </p>
                 <div className={styles.criteriaList}>
                   {activeFilters.search && <span className={styles.criteriaBadge}>Search: "{activeFilters.search}"</span>}
@@ -186,29 +304,70 @@ export default function CleanupOperationsModal({
                   {activeFilters.industry && <span className={styles.criteriaBadge}>Industry: {activeFilters.industry}</span>}
                   {activeFilters.country && <span className={styles.criteriaBadge}>Country: {activeFilters.country}</span>}
                   {activeFilters.channel && <span className={styles.criteriaBadge}>Channel: {activeFilters.channel}</span>}
+                  {activeFilters.tag && <span className={styles.criteriaBadge}>Tag: {activeFilters.tag}</span>}
                   {activeFilters.dateFrom && <span className={styles.criteriaBadge}>From: {activeFilters.dateFrom}</span>}
                   {activeFilters.dateTo && <span className={styles.criteriaBadge}>To: {activeFilters.dateTo}</span>}
-                  {!activeFilters.search && !activeFilters.status && !activeFilters.titleTier && !activeFilters.industry && !activeFilters.country && (
+                  {!activeFilters.search && !activeFilters.status && !activeFilters.titleTier && !activeFilters.industry && !activeFilters.country && !activeFilters.tag && (
                     <span className={styles.criteriaBadge}>All visible pipeline records ({totalFilteredCount})</span>
                   )}
                 </div>
               </div>
-
-              <p style={{ fontSize: '0.84rem', color: '#1e2a22', margin: 0 }}>
-                This will delete all matching prospects currently filtered in your view.
-              </p>
             </>
           )}
 
-          {/* TAB 2: DOMAIN / WILDCARD */}
+          {/* TAB 2: ID RANGES & BOUNDS */}
+          {activeTab === 'id_ranges' && (
+            <>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>ID Range Strings</label>
+                <textarea
+                  className={styles.textareaInput}
+                  rows={2}
+                  placeholder="e.g. 101-199, 250-255"
+                  value={idRangesText}
+                  onChange={(e) => setIdRangesText(e.target.value)}
+                />
+                <p className={styles.fieldHint}>
+                  Specify discrete ID ranges separated by commas or newlines (e.g. <code>101-199, 250-255</code>).
+                </p>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Min ID Bound (id_from)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className={styles.textInput}
+                    placeholder="e.g. 100"
+                    value={idFrom}
+                    onChange={(e) => setIdFrom(e.target.value)}
+                  />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Max ID Bound (id_to)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className={styles.textInput}
+                    placeholder="e.g. 500"
+                    value={idTo}
+                    onChange={(e) => setIdTo(e.target.value)}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* TAB 3: DOMAIN / WILDCARD */}
           {activeTab === 'domain' && (
             <>
               <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Targeting Method</label>
+                <label className={styles.fieldLabel}>Domain Matching Mode</label>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button
                     type="button"
-                    className={`${styles.tabBtn} ${domainMode === 'exact' ? styles.active : ''}`}
+                    className={`${styles.tabBtn} ${domainMode === 'exact' ? (isDeleteMode ? styles.active : styles.activeTagTab) : ''}`}
                     style={{ border: '1px solid #dfd9c4', borderRadius: '6px', padding: '0.4rem 0.75rem' }}
                     onClick={() => setDomainMode('exact')}
                   >
@@ -216,7 +375,7 @@ export default function CleanupOperationsModal({
                   </button>
                   <button
                     type="button"
-                    className={`${styles.tabBtn} ${domainMode === 'pattern' ? styles.active : ''}`}
+                    className={`${styles.tabBtn} ${domainMode === 'pattern' ? (isDeleteMode ? styles.active : styles.activeTagTab) : ''}`}
                     style={{ border: '1px solid #dfd9c4', borderRadius: '6px', padding: '0.4rem 0.75rem' }}
                     onClick={() => setDomainMode('pattern')}
                   >
@@ -224,20 +383,19 @@ export default function CleanupOperationsModal({
                   </button>
                   <button
                     type="button"
-                    className={`${styles.tabBtn} ${domainMode === 'list' ? styles.active : ''}`}
+                    className={`${styles.tabBtn} ${domainMode === 'list' ? (isDeleteMode ? styles.active : styles.activeTagTab) : ''}`}
                     style={{ border: '1px solid #dfd9c4', borderRadius: '6px', padding: '0.4rem 0.75rem' }}
                     onClick={() => setDomainMode('list')}
                   >
-                    Specific Email List
+                    Specific Emails List
                   </button>
                 </div>
               </div>
 
               {domainMode === 'exact' && (
                 <div className={styles.fieldGroup}>
-                  <label htmlFor="exactDomainInput" className={styles.fieldLabel}>Exact Email Domain</label>
+                  <label className={styles.fieldLabel}>Exact Email Domain</label>
                   <input
-                    id="exactDomainInput"
                     type="text"
                     className={styles.textInput}
                     placeholder="e.g. acmecorp.com"
@@ -245,16 +403,15 @@ export default function CleanupOperationsModal({
                     onChange={(e) => setEmailDomain(e.target.value)}
                   />
                   <p className={styles.fieldHint}>
-                    Deletes all leads with emails ending in this domain. Other extensions (.net, .org) remain safe.
+                    Matches emails ending in this exact domain. Other extensions (.net, .org) are protected.
                   </p>
                 </div>
               )}
 
               {domainMode === 'pattern' && (
                 <div className={styles.fieldGroup}>
-                  <label htmlFor="patternInput" className={styles.fieldLabel}>SQL Wildcard Pattern</label>
+                  <label className={styles.fieldLabel}>SQL Wildcard Pattern</label>
                   <input
-                    id="patternInput"
                     type="text"
                     className={styles.textInput}
                     placeholder="e.g. %@testleads.%"
@@ -262,72 +419,82 @@ export default function CleanupOperationsModal({
                     onChange={(e) => setEmailPattern(e.target.value)}
                   />
                   <p className={styles.fieldHint}>
-                    Matches emails matching pattern (% = any characters). Example: <code>%@testleads.%</code>
+                    Matches emails containing pattern (% = any characters). Example: <code>%@testleads.%</code>
                   </p>
                 </div>
               )}
 
               {domainMode === 'list' && (
                 <div className={styles.fieldGroup}>
-                  <label htmlFor="emailsTextarea" className={styles.fieldLabel}>Email Addresses (GDPR / Targeted)</label>
+                  <label className={styles.fieldLabel}>Email Addresses (Specific / Targeted)</label>
                   <textarea
-                    id="emailsTextarea"
                     className={styles.textareaInput}
                     rows={4}
                     placeholder="Paste emails separated by newlines or commas..."
                     value={emailsText}
                     onChange={(e) => setEmailsText(e.target.value)}
                   />
-                  <p className={styles.fieldHint}>
-                    Target specific email addresses for immediate GDPR compliance or privacy removal.
-                  </p>
                 </div>
               )}
             </>
           )}
 
-          {/* TAB 3: STATUS & DATE WINDOW */}
+          {/* TAB 4: TARGET BY TAG */}
+          {activeTab === 'tag_target' && (
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>Target Tag</label>
+              <input
+                type="text"
+                className={styles.textInput}
+                placeholder="e.g. test, demo, legacy-import"
+                value={targetTag}
+                onChange={(e) => setTargetTag(e.target.value)}
+              />
+              <p className={styles.fieldHint}>
+                Target leads currently tagged with this tag. Ideal for purging automated test leads (<code>test</code>) or relabeling existing tags.
+              </p>
+            </div>
+          )}
+
+          {/* TAB 5: STATUS & DATE WINDOW */}
           {activeTab === 'status' && (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div className={styles.fieldGroup}>
-                  <label htmlFor="statusSelect" className={styles.fieldLabel}>Status</label>
+                  <label className={styles.fieldLabel}>Pipeline Status</label>
                   <select
-                    id="statusSelect"
                     className={styles.selectInput}
                     value={statusVal}
                     onChange={(e) => setStatusVal(e.target.value)}
                   >
                     <option value="">Any Status</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="reviewed">Reviewed</option>
-                    <option value="qualified">Qualified</option>
-                    <option value="new">New</option>
+                    <option value="rejected">Rejected Only</option>
+                    <option value="new">New Only</option>
+                    <option value="reviewed">Reviewed Only</option>
+                    <option value="qualified">Qualified Only</option>
                   </select>
                 </div>
 
                 <div className={styles.fieldGroup}>
-                  <label htmlFor="channelSelect" className={styles.fieldLabel}>Source Channel</label>
+                  <label className={styles.fieldLabel}>Ingestion Channel</label>
                   <select
-                    id="channelSelect"
                     className={styles.selectInput}
                     value={channelVal}
                     onChange={(e) => setChannelVal(e.target.value)}
                   >
                     <option value="">Any Channel</option>
                     <option value="n8n">n8n Automation</option>
-                    <option value="csv_upload">CSV Upload</option>
-                    <option value="api">API Ingest</option>
+                    <option value="csv_import">CSV Import</option>
                     <option value="manual">Manual Entry</option>
+                    <option value="api">Direct API</option>
                   </select>
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div className={styles.fieldGroup}>
-                  <label htmlFor="dateFromInput" className={styles.fieldLabel}>Created After</label>
+                  <label className={styles.fieldLabel}>Created After (date_from)</label>
                   <input
-                    id="dateFromInput"
                     type="date"
                     className={styles.textInput}
                     value={dateFrom}
@@ -335,83 +502,134 @@ export default function CleanupOperationsModal({
                   />
                 </div>
                 <div className={styles.fieldGroup}>
-                  <label htmlFor="dateToInput" className={styles.fieldLabel}>Created Before</label>
+                  <label className={styles.fieldLabel}>Created Before (date_to)</label>
                   <input
-                    id="dateToInput"
                     type="date"
                     className={styles.textInput}
                     value={dateTo}
                     onChange={(e) => setDateTo(e.target.value)}
                   />
+                  <p className={styles.fieldHint}>
+                    Use a cutoff date (e.g. <code>2026-08-20</code>) to target older leads created before the tag system.
+                  </p>
                 </div>
               </div>
             </>
           )}
 
-          {/* TAB 4: WIPE EVERYTHING */}
-          {activeTab === 'wipe' && (
+          {/* TAB 6: RESET DATABASE (DELETE MODE ONLY) */}
+          {activeTab === 'wipe' && isDeleteMode && (
             <div className={styles.warningBox}>
               <AlertTriangle size={20} />
               <div>
-                <strong>Complete Database Reset:</strong> This will delete every lead across all channels, statuses, and dates. Use only when preparing a new environment or resetting test data.
+                <strong>Complete Database Reset:</strong>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem' }}>
+                  This will wipe ALL prospects and their tag pivot links from the database. Company records and system configuration are retained.
+                </p>
               </div>
             </div>
           )}
 
-          {/* Safe Notice */}
-          <div className={styles.safeNotice}>
-            <ShieldCheck size={16} />
-            <span>
-              <strong>Company data is safe:</strong> Company profiles, website domains, and industry categories will remain saved in your database so other records aren't affected.
-            </span>
-          </div>
+          {/* ── TAGGING CONTROLS (WHEN IN TAG MODE) ── */}
+          {!isDeleteMode && (
+            <div style={{ borderTop: '1px solid #dfd9c4', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Tagging Operation</label>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    type="button"
+                    className={`${styles.tabBtn} ${tagOpMode === 'add' ? styles.activeTagTab : ''}`}
+                    style={{ border: '1px solid #dfd9c4', borderRadius: '6px', padding: '0.35rem 0.75rem' }}
+                    onClick={() => setTagOpMode('add')}
+                  >
+                    Add Tags
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.tabBtn} ${tagOpMode === 'remove' ? styles.activeTagTab : ''}`}
+                    style={{ border: '1px solid #dfd9c4', borderRadius: '6px', padding: '0.35rem 0.75rem' }}
+                    onClick={() => setTagOpMode('remove')}
+                  >
+                    Remove Tags
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.tabBtn} ${tagOpMode === 'sync' ? styles.activeTagTab : ''}`}
+                    style={{ border: '1px solid #dfd9c4', borderRadius: '6px', padding: '0.35rem 0.75rem' }}
+                    onClick={() => setTagOpMode('sync')}
+                  >
+                    Sync (Overwrite)
+                  </button>
+                </div>
+              </div>
 
-          {/* Confirmation Box */}
-          <div className={styles.confirmBox}>
-            <label htmlFor="cleanupConfirmInput" className={styles.confirmLabel}>
-              Type <strong>{requiredConfirmation}</strong> below to confirm this cleanup:
-            </label>
-            <input
-              id="cleanupConfirmInput"
-              type="text"
-              className={styles.confirmInput}
-              placeholder={`Type ${requiredConfirmation} to confirm`}
-              value={confirmText}
-              onChange={(e) => setConfirmText(e.target.value)}
-              disabled={isDeleting}
-              autoFocus
-            />
-          </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Tags to Apply / Remove *</label>
+                <input
+                  type="text"
+                  className={styles.textInput}
+                  placeholder="e.g. legacy-import, q3-campaign (comma-separated)"
+                  value={tagsToApplyText}
+                  onChange={(e) => setTagsToApplyText(e.target.value)}
+                />
+                <p className={styles.fieldHint}>
+                  Tags that don't exist yet will be automatically created.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Safety notices and confirmations for DELETE mode */}
+          {isDeleteMode && (
+            <>
+              <div className={styles.safeNotice}>
+                <ShieldCheck size={16} />
+                <span>
+                  <strong>Safety Protection:</strong> Deletions remove matching lead records and tag links. Normalized company profiles and domains are preserved.
+                </span>
+              </div>
+
+              <div className={styles.confirmBox}>
+                <label className={styles.confirmLabel}>
+                  Type <strong style={{ color: 'var(--error)' }}>{requiredConfirmation}</strong> to proceed:
+                </label>
+                <input
+                  type="text"
+                  className={styles.confirmInput}
+                  placeholder={requiredConfirmation}
+                  value={confirmText}
+                  onChange={(e) => setConfirmText(e.target.value)}
+                />
+              </div>
+            </>
+          )}
         </div>
 
         {/* Footer */}
         <div className={styles.modalFooter}>
-          <Button
-            variant="ghost"
-            onClick={onClose}
-            disabled={isDeleting}
-          >
+          <Button variant="outline" size="sm" onClick={onClose} disabled={isProcessing}>
             Cancel
           </Button>
 
-          <Button
-            variant="danger"
-            className={styles.deleteBtn}
-            onClick={handleSubmit}
-            disabled={!isConfirmed || isDeleting}
-          >
-            {isDeleting ? (
-              <>
-                <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
-                <span>Processing Cleanup…</span>
-              </>
-            ) : (
-              <>
-                <Trash2 size={14} />
-                <span>Execute Cleanup Operation</span>
-              </>
-            )}
-          </Button>
+          {isDeleteMode ? (
+            <Button
+              size="sm"
+              className={styles.deleteBtn}
+              onClick={handleSubmit}
+              disabled={!isConfirmed || isProcessing}
+            >
+              {isProcessing ? 'Deleting…' : 'Execute Cleanup Deletion'}
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              className={styles.tagActionBtn}
+              onClick={handleSubmit}
+              disabled={isProcessing || !tagsToApplyText.trim()}
+            >
+              {isProcessing ? 'Updating…' : 'Apply Tags to Matching Leads'}
+            </Button>
+          )}
         </div>
       </div>
     </div>

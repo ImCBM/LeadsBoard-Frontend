@@ -19,7 +19,8 @@ export default function LeadCard({
   isSelected, 
   isChecked = false, 
   onToggleCheck, 
-  onDelete 
+  onDelete,
+  onSetTag,
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -141,6 +142,46 @@ export default function LeadCard({
           </span>
         )}
       </div>
+
+      {/* Public Tags Badges */}
+      {(() => {
+        const publicTags = (lead.tags || []).filter((t) => t.type !== 'system');
+        if (publicTags.length === 0) return null;
+        return (
+          <div className={styles.cardTagsRow}>
+            {publicTags.slice(0, 3).map((tag) => (
+              <span
+                key={tag.id || tag.name}
+                className={styles.cardTagPill}
+                style={{
+                  backgroundColor: `${tag.color || '#1fa97d'}18`,
+                  color: tag.color || '#1fa97d',
+                  borderColor: `${tag.color || '#1fa97d'}40`,
+                  cursor: onSetTag ? 'pointer' : 'default',
+                }}
+                onClick={(e) => {
+                  if (onSetTag) {
+                    e.stopPropagation();
+                    onSetTag(tag.slug);
+                  }
+                }}
+                title={onSetTag ? `Filter by tag: ${tag.name}` : tag.name}
+              >
+                <span
+                  className={styles.cardTagDot}
+                  style={{ backgroundColor: tag.color || '#1fa97d' }}
+                />
+                <span>{tag.name}</span>
+              </span>
+            ))}
+            {publicTags.length > 3 && (
+              <span className={styles.moreTagsPill}>
+                +{publicTags.length - 3}
+              </span>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Footer & Direct Actions */}
       <div className={styles.footer} onClick={(e) => e.stopPropagation()}>

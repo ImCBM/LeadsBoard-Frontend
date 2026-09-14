@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { 
   X, ExternalLink, Mail, Phone, Copy, Check, Globe, 
   Building2, MapPin, Users, ArrowRight, ShieldCheck,
-  Tag, CheckCircle2, Trash2
+  Tag, CheckCircle2, Trash2, Plus
 } from 'lucide-react';
 
 const LinkedInIcon = ({ size = 15 }) => (
@@ -13,6 +14,7 @@ const LinkedInIcon = ({ size = 15 }) => (
 );
 import toast from 'react-hot-toast';
 import * as leadsApi from '../../api/leads';
+import * as tagsApi from '../../api/tags';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import StatusBadge from '../ui/StatusBadge';
@@ -31,6 +33,9 @@ export default function LeadDrawer({ lead, onClose, onLeadUpdated, onLeadDeleted
   const [copiedField, setCopiedField] = useState(null);
   const [status, setStatus] = useState(lead?.status || 'new');
   const [notes, setNotes] = useState(lead?.notes || '');
+  const [assignedTags, setAssignedTags] = useState(lead?.tags || []);
+  const [isTagDropdownOpen, setIsTagDropdownOpen] = useState(false);
+  const [isTagUpdating, setIsTagUpdating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -39,8 +44,60 @@ export default function LeadDrawer({ lead, onClose, onLeadUpdated, onLeadDeleted
     if (lead) {
       setStatus(lead.status || 'new');
       setNotes(lead.notes || '');
+      setAssignedTags(lead.tags || []);
     }
   }, [lead]);
+
+  // Fetch available public tags
+  const tagsQuery = useQuery({
+    queryKey: ['tags', { type: 'public' }],
+    queryFn: () => tagsApi.getTags({ type: 'public' }),
+    staleTime: 60 * 1000,
+  });
+
+  const allTags = (tagsQuery.data?.data || []).filter((t) => t.type !== 'system');
+  const publicAssigned = (assignedTags || []).filter((t) => t.type !== 'system');
+  const assignedNames = new Set(publicAssigned.map((t) => (t.name || '').toLowerCase()));
+  const availableTags = allTags.filter((t) => !assignedNames.has((t.name || '').toLowerCase()));
+
+  const handleAddTag = async (tagToAdd) => {
+    try {
+      setIsTagUpdating(true);
+      setIsTagDropdownOpen(false);
+      await leadsApi.bulkTagLeads({
+        lead_ids: [lead.id],
+        action: 'add_tags',
+        add_tags: [tagToAdd.name],
+      });
+      const nextTags = [...assignedTags, tagToAdd];
+      setAssignedTags(nextTags);
+      toast.success(`Tag "${tagToAdd.name}" added`);
+      if (onLeadUpdated) onLeadUpdated({ ...lead, tags: nextTags });
+    } catch {
+      toast.error('Failed to add tag');
+    } finally {
+      setIsTagUpdating(false);
+    }
+  };
+
+  const handleRemoveTag = async (tagToRemove) => {
+    try {
+      setIsTagUpdating(true);
+      await leadsApi.bulkTagLeads({
+        lead_ids: [lead.id],
+        action: 'remove_tags',
+        remove_tags: [tagToRemove.name],
+      });
+      const nextTags = assignedTags.filter((t) => t.id !== tagToRemove.id && t.name !== tagToRemove.name);
+      setAssignedTags(nextTags);
+      toast.success(`Tag "${tagToRemove.name}" removed`);
+      if (onLeadUpdated) onLeadUpdated({ ...lead, tags: nextTags });
+    } catch {
+      toast.error('Failed to remove tag');
+    } finally {
+      setIsTagUpdating(false);
+    }
+  };
 
   if (!lead) return null;
 
@@ -187,6 +244,82 @@ export default function LeadDrawer({ lead, onClose, onLeadUpdated, onLeadDeleted
                   </button>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Public Tags Management */}
+          <div className={styles.section}>
+            <div className={styles.tagsHeaderRow}>
+              <h4 className={styles.sectionTitle} style={{ margin: 0 }}>Prospect Tags</h4>
+              <div className={styles.addTagWrapper}>
+                <button
+                  type="button"
+                  className={styles.addTagTriggerBtn}
+                  onClick={() => setIsTagDropdownOpen((prev) => !prev)}
+                  disabled={isTagUpdating}
+                  title="Add tag"
+                >
+                  <Plus size={12} />
+                  <span>Add Tag</span>
+                </button>
+                {isTagDropdownOpen && (
+                  <div className={styles.tagDropdownMenu}>
+                    {availableTags.length === 0 ? (
+                      <div className={styles.tagDropdownEmpty}>No more tags available</div>
+                    ) : (
+                      availableTags.map((t) => (
+                        <button
+                          key={t.id || t.slug}
+                          type="button"
+                          className={styles.tagDropdownItem}
+                          onClick={() => handleAddTag(t)}
+                        >
+                          <span
+                            className={styles.tagChipDot}
+                            style={{ backgroundColor: t.color || '#1fa97d' }}
+                          />
+                          <span>{t.name}</span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className={styles.tagsContainer}>
+              <div className={styles.tagsList}>
+                {publicAssigned.length === 0 ? (
+                  <span className={styles.emptyTagsText}>No public tags attached to this prospect.</span>
+                ) : (
+                  publicAssigned.map((t) => (
+                    <span
+                      key={t.id || t.slug}
+                      className={styles.tagChip}
+                      style={{
+                        backgroundColor: `${t.color || '#1fa97d'}18`,
+                        color: t.color || '#1fa97d',
+                        borderColor: `${t.color || '#1fa97d'}40`,
+                      }}
+                    >
+                      <span
+                        className={styles.tagChipDot}
+                        style={{ backgroundColor: t.color || '#1fa97d' }}
+                      />
+                      <span>{t.name}</span>
+                      <button
+                        type="button"
+                        className={styles.tagChipRemove}
+                        onClick={() => handleRemoveTag(t)}
+                        title={`Remove ${t.name}`}
+                        disabled={isTagUpdating}
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))
+                )}
+              </div>
             </div>
           </div>
 

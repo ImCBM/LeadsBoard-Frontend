@@ -7,7 +7,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: var(--space-md);
+  padding: var(--space-md, 1rem);
   animation: fadeIn 0.15s ease-out;
 }
 
@@ -22,7 +22,7 @@
   border-radius: var(--radius-lg, 16px);
   box-shadow: 0 20px 48px rgba(30, 42, 34, 0.18);
   width: 100%;
-  max-width: 600px;
+  max-width: 640px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -54,12 +54,20 @@
   width: 42px;
   height: 42px;
   border-radius: 10px;
-  background: #fdf0ee;
-  color: var(--error, #c13f2c);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+.headerIcon.deleteMode {
+  background: #fdf0ee;
+  color: var(--error, #c13f2c);
+}
+
+.headerIcon.tagMode {
+  background: var(--primary-container, #c9f1e1);
+  color: var(--primary, #1fa97d);
 }
 
 .headerContent {
@@ -97,11 +105,62 @@
   color: var(--on-surface, #1e2a22);
 }
 
+/* ── Operation Type Toggle (Delete vs Tag) ── */
+.operationBar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--surface-container-low, #f8f6f0);
+  border-bottom: 1px solid var(--outline-variant, #eee8d7);
+}
+
+.operationLabel {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--on-surface-variant, #52584a);
+  margin-right: 0.25rem;
+}
+
+.opTypeBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill, 9999px);
+  border: 1px solid var(--outline-variant, #dfd9c4);
+  background: var(--surface-container-lowest, #ffffff);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--on-surface-variant, #52584a);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.opTypeBtn:hover {
+  border-color: var(--outline, #7e8474);
+  color: var(--on-surface, #1e2a22);
+}
+
+.opTypeBtn.activeDelete {
+  background: #fdf0ee;
+  border-color: var(--error, #c13f2c);
+  color: var(--error, #c13f2c);
+}
+
+.opTypeBtn.activeTag {
+  background: var(--primary-container, #c9f1e1);
+  border-color: var(--primary, #1fa97d);
+  color: var(--on-primary-container, #08402f);
+}
+
 /* ── Tab Navigation ── */
 .tabsBar {
   display: flex;
   border-bottom: 1px solid var(--outline-variant, #eee8d7);
-  background: var(--surface-container-low, #f8f6f0);
+  background: var(--surface-container-lowest, #ffffff);
   padding: 0 1rem;
   overflow-x: auto;
 }
@@ -110,8 +169,8 @@
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  padding: 0.75rem 0.9rem;
-  font-size: 0.82rem;
+  padding: 0.75rem 0.85rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: var(--on-surface-variant, #52584a);
   cursor: pointer;
@@ -126,6 +185,12 @@
 .tabBtn.active {
   color: var(--error, #c13f2c);
   border-bottom-color: var(--error, #c13f2c);
+  font-weight: 600;
+}
+
+.tabBtn.activeTagTab {
+  color: var(--primary, #1fa97d);
+  border-bottom-color: var(--primary, #1fa97d);
   font-weight: 600;
 }
 
@@ -153,6 +218,7 @@
   font-size: 0.76rem;
   color: var(--on-surface-variant, #52584a);
   margin: 0;
+  line-height: 1.35;
 }
 
 .textInput, .selectInput {
@@ -237,6 +303,24 @@
   margin-top: 2px;
 }
 
+.infoBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  background: var(--tertiary-container, #cfebf5);
+  border: 1px solid #bce2ef;
+  border-radius: 8px;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.82rem;
+  color: var(--on-tertiary-container, #0f3c4c);
+  line-height: 1.4;
+}
+
+.infoBox svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
 .safeNotice {
   display: flex;
   align-items: flex-start;
@@ -308,6 +392,21 @@
 }
 
 .deleteBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tagActionBtn {
+  background-color: var(--primary, #1fa97d) !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+.tagActionBtn:hover:not(:disabled) {
+  background-color: #178a66 !important;
+}
+
+.tagActionBtn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }

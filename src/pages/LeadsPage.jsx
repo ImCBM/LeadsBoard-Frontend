@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { 
   Download, UploadCloud, Phone, ArrowUpDown, ArrowUp, ArrowDown, 
   ExternalLink, Mail, Copy, Check, Users, MapPin, 
   Globe, SlidersHorizontal, Eye, X, Building2, Trash2,
-  LayoutGrid, Table as TableIcon
+  LayoutGrid, Table as TableIcon, Tag as TagIcon
 } from 'lucide-react';
 
 const LinkedInIcon = ({ size = 14 }) => (
@@ -34,12 +35,14 @@ import AdvancedFilterPanel from '../components/leads/AdvancedFilterPanel';
 import ImportLeadsModal from '../components/leads/ImportLeadsModal';
 import DeleteLeadModal from '../components/leads/DeleteLeadModal';
 import CleanupOperationsModal from '../components/leads/CleanupOperationsModal';
+import BulkTagModal from '../components/leads/BulkTagModal';
 import styles from './LeadsPage.module.css';
 
 const DEFAULT_VISIBLE_COLUMNS = {
   name: true,
   company: true,
   role: true,
+  tags: true,
   industry: true,
   headcount: true,
   location: true,
@@ -51,6 +54,7 @@ const DEFAULT_VISIBLE_COLUMNS = {
 
 export default function LeadsPage() {
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Search & Filters state
   const [search, setSearch] = useState('');
@@ -67,6 +71,7 @@ export default function LeadsPage() {
   const [emailStatus, setEmailStatus] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [tag, setTag] = useState(searchParams.get('tag') || '');
   
   // Sorting & Pagination
   const [sortBy, setSortBy] = useState('created_at');
@@ -82,6 +87,27 @@ export default function LeadsPage() {
   const [copiedEmail, setCopiedEmail] = useState(null);
   const [copiedPhone, setCopiedPhone] = useState(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [showBulkTagModal, setShowBulkTagModal] = useState(false);
+
+  // Sync URL search param ?tag= with local state
+  useEffect(() => {
+    const urlTag = searchParams.get('tag') || '';
+    if (urlTag !== tag) {
+      setTag(urlTag);
+      setPage(1);
+    }
+  }, [searchParams, tag]);
+
+  const handleSetTag = (newTag) => {
+    setTag(newTag);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (newTag) next.set('tag', newTag);
+      else next.delete('tag');
+      return next;
+    });
+    setPage(1);
+  };
 
   // Debounced search
   const debounceRef = useRef(null);
@@ -119,6 +145,7 @@ export default function LeadsPage() {
   if (emailStatus) params.email_status = emailStatus;
   if (dateFrom) params.date_from = dateFrom;
   if (dateTo) params.date_to = dateTo;
+  if (tag) params.tag = tag;
 
   // React Query: Fetch filter options
   const filtersQuery = useQuery({
@@ -193,6 +220,7 @@ export default function LeadsPage() {
     setEmailStatus('');
     setDateFrom('');
     setDateTo('');
+    handleSetTag('');
     setPage(1);
   };
 
@@ -209,16 +237,17 @@ export default function LeadsPage() {
     if (key === 'emailStatus') setEmailStatus(value);
     if (key === 'dateFrom') setDateFrom(value);
     if (key === 'dateTo') setDateTo(value);
+    if (key === 'tag') handleSetTag(value);
     setPage(1);
   };
 
   // Active advanced filters count
   const activeAdvancedCount = [
     industry, country, region, channel, headcountRange,
-    headcountMin, headcountMax, websiteStatus, emailStatus, dateFrom, dateTo
+    headcountMin, headcountMax, websiteStatus, emailStatus, dateFrom, dateTo, tag
   ].filter(Boolean).length;
 
-  const hasAnyFilters = Boolean(search || status || titleTier || activeAdvancedCount > 0);
+  const hasAnyFilters = Boolean(search || status || titleTier || tag || activeAdvancedCount > 0);
 
   // Build active filter chips list for the toolbar
   const activeFilters = useMemo(() => {
@@ -226,6 +255,7 @@ export default function LeadsPage() {
     if (search) list.push({ key: 'search', category: 'Search', label: `"${search}"` });
     if (status) list.push({ key: 'status', category: 'Status', label: status.toUpperCase() });
     if (titleTier) list.push({ key: 'titleTier', category: 'Tier', label: titleTier });
+    if (tag) list.push({ key: 'tag', category: 'Tag', label: `#${tag}` });
     if (industry) list.push({ key: 'industry', category: 'Industry', label: industry });
     if (region && (!country || country.includes(','))) {
       list.push({ key: 'region', category: 'Region', label: region });
@@ -264,13 +294,14 @@ export default function LeadsPage() {
       });
     }
     return list;
-  }, [search, status, titleTier, industry, region, country, headcountRange, headcountMin, headcountMax, websiteStatus, emailStatus, channel, dateFrom, dateTo]);
+  }, [search, status, titleTier, tag, industry, region, country, headcountRange, headcountMin, headcountMax, websiteStatus, emailStatus, channel, dateFrom, dateTo]);
 
   // Remove individual filter chip
   const handleRemoveFilter = (filterKey) => {
     if (filterKey === 'search') setSearch('');
     if (filterKey === 'status') setStatus('');
     if (filterKey === 'titleTier') setTitleTier('');
+    if (filterKey === 'tag') handleSetTag('');
     if (filterKey === 'industry') setIndustry('');
     if (filterKey === 'region') { setRegion(''); setCountry(''); }
     if (filterKey === 'country') setCountry('');
@@ -455,6 +486,10 @@ export default function LeadsPage() {
                       <span>Job Title</span>
                     </label>
                     <label className={styles.columnOption}>
+                      <input type="checkbox" checked={visibleColumns.tags} onChange={() => toggleColumn('tags')} />
+                      <span>Tags</span>
+                    </label>
+                    <label className={styles.columnOption}>
                       <input type="checkbox" checked={visibleColumns.industry} onChange={() => toggleColumn('industry')} />
                       <span>Industry</span>
                     </label>
@@ -541,6 +576,7 @@ export default function LeadsPage() {
           emailStatus,
           dateFrom,
           dateTo,
+          tag,
         }}
         onFilterChange={handleFilterChange}
         filterOptions={filterOptions}
@@ -580,6 +616,7 @@ export default function LeadsPage() {
                     isChecked={selectedLeadIds.has(lead.id)}
                     onToggleCheck={toggleLeadCheck}
                     onDelete={(l) => setLeadToDelete(l)}
+                    onSetTag={handleSetTag}
                   />
                 ))}
               </div>
@@ -638,6 +675,12 @@ export default function LeadsPage() {
                             Job Title
                             <SortIcon column="job_title" sortBy={sortBy} sortDir={sortDir} />
                           </span>
+                        </th>
+                      )}
+
+                      {visibleColumns.tags && (
+                        <th>
+                          <span className={styles.thContent}>Tags</span>
                         </th>
                       )}
 
@@ -781,6 +824,49 @@ export default function LeadsPage() {
                             </td>
                           )}
 
+                          {/* Tags */}
+                          {visibleColumns.tags && (
+                            <td onClick={(e) => e.stopPropagation()}>
+                              <div className={styles.tableTagsStack}>
+                                {Array.isArray(lead.tags) && lead.tags.filter((t) => t.type !== 'system').length > 0 ? (
+                                  lead.tags
+                                    .filter((t) => t.type !== 'system')
+                                    .slice(0, 3)
+                                    .map((t) => (
+                                      <button
+                                        key={t.id || t.slug}
+                                        type="button"
+                                        className={styles.tableTagChip}
+                                        onClick={() => handleSetTag(t.slug)}
+                                        title={`Filter by tag: ${t.name}`}
+                                        style={{
+                                          borderColor: `${t.color || '#3b82f6'}40`,
+                                          color: t.color || 'var(--text-primary)',
+                                          backgroundColor: `${t.color || '#3b82f6'}15`,
+                                        }}
+                                      >
+                                        <span
+                                          className={styles.tableTagDot}
+                                          style={{ backgroundColor: t.color || '#3b82f6' }}
+                                        />
+                                        <span>{t.name}</span>
+                                      </button>
+                                    ))
+                                ) : (
+                                  <span className={styles.tableMutedText}>—</span>
+                                )}
+                                {Array.isArray(lead.tags) && lead.tags.filter((t) => t.type !== 'system').length > 3 && (
+                                  <span
+                                    className={styles.tableTagMore}
+                                    title={lead.tags.filter((t) => t.type !== 'system').slice(3).map((t) => t.name).join(', ')}
+                                  >
+                                    +{lead.tags.filter((t) => t.type !== 'system').length - 3}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                          )}
+
                           {/* Industry */}
                           {visibleColumns.industry && (
                             <td>
@@ -817,7 +903,10 @@ export default function LeadsPage() {
                                   <span className={styles.tableCountryText}>{lead.country || '—'}</span>
                                 )}
                               </div>
-                                             {/* Contact */}
+                            </td>
+                          )}
+
+                          {/* Contact */}
                           {visibleColumns.contact && (
                             <td onClick={(e) => e.stopPropagation()}>
                               <div className={styles.tableContactStack}>
@@ -872,7 +961,6 @@ export default function LeadsPage() {
                                 )}
                               </div>
                             </td>
-                          )}               </td>
                           )}
 
                           {/* Status */}
@@ -1001,6 +1089,10 @@ export default function LeadsPage() {
             <button className={styles.batchDeselectBtn} onClick={() => setSelectedLeadIds(new Set())}>
               Deselect All
             </button>
+            <button className={styles.batchTagBtn} onClick={() => setShowBulkTagModal(true)}>
+              <TagIcon size={13} />
+              <span>Tag Selected ({selectedLeadIds.size})</span>
+            </button>
             <button className={styles.batchDeleteBtn} onClick={() => setShowBulkDeleteModal(true)}>
               <Trash2 size={13} />
               <span>Delete Selected ({selectedLeadIds.size})</span>
@@ -1008,6 +1100,17 @@ export default function LeadsPage() {
           </div>
         </div>
       )}
+
+      {/* Multi-Select Bulk Tag Modal */}
+      <BulkTagModal
+        isOpen={showBulkTagModal}
+        onClose={() => setShowBulkTagModal(false)}
+        selectedLeadIds={Array.from(selectedLeadIds)}
+        onSuccess={() => {
+          setSelectedLeadIds(new Set());
+          queryClient.invalidateQueries({ queryKey: ['leads'] });
+        }}
+      />
 
       {/* Single Lead Delete Confirmation Modal */}
       <DeleteLeadModal
@@ -1046,6 +1149,7 @@ export default function LeadsPage() {
           channel,
           dateFrom,
           dateTo,
+          tag,
         }}
         totalFilteredCount={pagination.total}
       />
