@@ -71,10 +71,51 @@ export const exportCsv = async (params = {}) => {
 };
 
 /**
+ * POST /leads/import/csv — Upload and import a CSV file with duplicate and validation checks.
+ * @param {File} file
+ * @returns {Promise<{ success, message, summary: { total, inserted, duplicates, errors }, details: Array }>}
+ */
+export const importCsv = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const { data } = await client.post('/leads/import/csv', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return data;
+};
+
+/**
  * GET /leads/filters — Distinct filter options for dropdowns.
- * @returns {{ industries, title_tiers, statuses, countries, channels }}
+ * @returns {{ industries, title_tiers, statuses, countries, channels, tags, headcount_ranges, website_statuses, email_statuses }}
  */
 export const getFilters = async () => {
   const { data } = await client.get('/leads/filters');
   return data;
 };
+
+/**
+ * POST /leads/bulk-delete — Bulk delete leads matching specified criteria.
+ * @param {object} criteria — lead_ids, id_ranges, id_from, id_to, emails, email_domain, email_pattern,
+ *   tag, tags, status, channel, date_from, date_to, confirm
+ * @returns {Promise<{ message: string, deleted_count: number, deleted_ids: Array, criteria: object }>}
+ */
+export const bulkDeleteLeads = async (criteria) => {
+  const { data } = await client.post('/leads/bulk-delete', criteria);
+  return data;
+};
+
+/**
+ * POST /leads/bulk-tag — Bulk apply tags across multiple leads.
+ * @param {object} payload — { lead_ids, id_ranges, id_from, id_to, emails, email_domain, email_pattern,
+ *   filter_tag, channel, status, date_from, date_to, add_tags, remove_tags, sync_tags }
+ * @returns {Promise<{ message: string, updated_count: number, lead_ids: Array, operations: object }>}
+ */
+export const bulkTagLeads = async (payload) => {
+  const { data } = await client.post('/leads/bulk-tag', payload);
+  return data;
+};
+
+

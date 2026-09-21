@@ -29,6 +29,15 @@
   gap: 14px 18px;
 }
 
+.fullWidthBlock {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--outline-variant);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 /* ── Individual Filter Block ── */
 .block {
   display: flex;
