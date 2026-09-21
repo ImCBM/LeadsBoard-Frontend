@@ -12,7 +12,9 @@ export default function BulkTagModal({
   onClose,
   onSuccess,
   leadIds = [],
+  selectedLeadIds,
 }) {
+  const targetLeadIds = selectedLeadIds || leadIds;
   const [mode, setMode] = useState('add'); // 'add' | 'remove' | 'sync'
   const [selectedTags, setSelectedTags] = useState([]);
   const [customTagName, setCustomTagName] = useState('');
@@ -45,19 +47,27 @@ export default function BulkTagModal({
     setSelectedTags(selectedTags.filter((t) => t !== tagName));
   };
 
+  const handleToggleTag = (tagName) => {
+    if (selectedTags.includes(tagName)) {
+      handleRemoveTag(tagName);
+    } else {
+      handleAddTag(tagName);
+    }
+  };
+
   const handleSubmit = async () => {
     if (selectedTags.length === 0) {
       toast.error('Please select or specify at least one tag');
       return;
     }
 
-    if (leadIds.length === 0) {
+    if (targetLeadIds.length === 0) {
       toast.error('No prospects selected');
       return;
     }
 
     const payload = {
-      lead_ids: leadIds,
+      lead_ids: targetLeadIds,
     };
 
     if (mode === 'add') {
@@ -71,7 +81,7 @@ export default function BulkTagModal({
     try {
       setIsSubmitting(true);
       const res = await leadsApi.bulkTagLeads(payload);
-      const count = res.updated_count ?? leadIds.length;
+      const count = res.updated_count ?? targetLeadIds.length;
       toast.success(
         `Successfully updated tags on ${count} ${count === 1 ? 'prospect' : 'prospects'}`
       );
@@ -111,7 +121,7 @@ export default function BulkTagModal({
           <div className={styles.selectionInfo}>
             <Users size={16} />
             <span>
-              Targeting <span className={styles.selectionCount}>{leadIds.length}</span> {leadIds.length === 1 ? 'selected prospect' : 'selected prospects'}
+              Targeting <span className={styles.selectionCount}>{targetLeadIds.length}</span> {targetLeadIds.length === 1 ? 'selected prospect' : 'selected prospects'}
             </span>
           </div>
 
@@ -163,8 +173,13 @@ export default function BulkTagModal({
                   <span
                     key={tagName}
                     className={styles.tagChip}
-                    style={{ backgroundColor: getTagColor(tagName) }}
+                    style={{
+                      backgroundColor: `${getTagColor(tagName)}18`,
+                      color: getTagColor(tagName),
+                      borderColor: `${getTagColor(tagName)}40`,
+                    }}
                   >
+                    <span className={styles.colorDot} style={{ backgroundColor: getTagColor(tagName) }} />
                     <span>{tagName}</span>
                     <button
                       type="button"
@@ -192,7 +207,7 @@ export default function BulkTagModal({
                       key={tag.id}
                       type="button"
                       className={`${styles.availableTagPill} ${isSelected ? styles.selected : ''}`}
-                      onClick={() => handleAddTag(tag.name)}
+                      onClick={() => handleToggleTag(tag.name)}
                     >
                       <span className={styles.colorDot} style={{ backgroundColor: tag.color || '#1fa97d' }} />
                       <span>{tag.name}</span>
