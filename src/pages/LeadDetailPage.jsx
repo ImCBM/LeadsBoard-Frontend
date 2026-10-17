@@ -190,7 +190,7 @@ export default function LeadDetailPage() {
             <DetailField label="Full Name" value={lead.full_name} />
             <DetailField label="Job Title" value={lead.job_title} />
             <DetailField label="Title Tier" value={lead.title_tier} />
-            <DetailField label="Corporate Email" value={lead.corporate_email} href={`mailto:${lead.corporate_email}`} />
+            <DetailField label="Corporate Email" value={lead.corporate_email} href={lead.corporate_email ? `mailto:${lead.corporate_email}` : null} />
             <DetailField label="Contact Number" value={lead.contact_number} href={lead.contact_number ? `tel:${lead.contact_number}` : null} />
             <DetailField label="Email Status" value={lead.email_status} />
             <DetailField label="Executive LinkedIn" value={lead.executive_linkedin_url} href={lead.executive_linkedin_url} />
