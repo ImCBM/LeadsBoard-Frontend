@@ -169,12 +169,164 @@
   font-size: var(--body-lg-size);
 }
 
+/* ── Ingestion & Data Quality Grid ── */
+.qualityAndActivityGrid {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: var(--space-lg);
+}
+
+.auditCard {
+  background-color: var(--surface-container);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+.cardHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+}
+
+.auditCardTitle {
+  font-family: var(--font-display);
+  font-size: var(--body-lg-size);
+  font-weight: 600;
+  color: var(--on-surface);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.qualityMetricsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.qualityRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.75rem;
+  background: var(--surface-container-lowest, #ffffff);
+  border: 1px solid var(--outline-variant, #dfd9c4);
+  border-radius: var(--radius-sm, 8px);
+  font-size: 0.85rem;
+}
+
+.qualityLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--on-surface, #1e2a22);
+}
+
+.qualityValue {
+  font-weight: 600;
+  color: var(--on-surface-variant, #52584a);
+}
+
+.qualityValue.warn {
+  color: #c9621e;
+}
+
+.qualityValue.ok {
+  color: #1fa97d;
+}
+
+/* ── Activity Table ── */
+.batchTableWrapper {
+  overflow-x: auto;
+  margin-top: 0.25rem;
+}
+
+.batchTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.batchTable th {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  color: var(--on-surface-variant, #52584a);
+  font-weight: 600;
+  border-bottom: 1px solid var(--outline-variant, #dfd9c4);
+}
+
+.batchTable td {
+  padding: 0.6rem;
+  border-bottom: 1px solid var(--outline-variant, #eee8d7);
+  color: var(--on-surface, #1e2a22);
+  vertical-align: middle;
+}
+
+.sourceBadge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  background: #c9f1e1;
+  color: #12654a;
+}
+
+.sourceBadge.csv_upload {
+  background: #fedfc4;
+  color: #8c3b0d;
+}
+
+.sourceBadge.api {
+  background: #cbe7f2;
+  color: #19526b;
+}
+
+.countPill {
+  font-weight: 600;
+  font-size: 0.78rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.countPill.success {
+  background: #e5f7ee;
+  color: #1fa97d;
+}
+
+.countPill.duplicates {
+  background: #fff4ea;
+  color: #c9621e;
+}
+
+.countPill.errors {
+  background: #fdf0ee;
+  color: #c13f2c;
+}
+
+.emptyBatches {
+  padding: 2rem 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--on-surface-variant, #52584a);
+}
+
 /* ── Responsive ── */
 @media (max-width: 1024px) {
   .statsGrid {
     grid-template-columns: repeat(2, 1fr);
   }
   .chartsGrid {
+    grid-template-columns: 1fr;
+  }
+  .qualityAndActivityGrid {
     grid-template-columns: 1fr;
   }
   .statusGrid {

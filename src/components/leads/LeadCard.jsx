@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { 
-  Mail, Copy, Check, Globe, ExternalLink, MapPin, 
-  Users, Eye, Building2, ShieldCheck, Sparkles 
+  Mail, Check, Globe, ExternalLink, MapPin, 
+  Users, Eye, Building2, Trash2 
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import StatusBadge from '../ui/StatusBadge';
@@ -13,7 +13,15 @@ const LinkedInIcon = ({ size = 14 }) => (
   </svg>
 );
 
-export default function LeadCard({ lead, onSelect, isSelected }) {
+export default function LeadCard({ 
+  lead, 
+  onSelect, 
+  isSelected, 
+  isChecked = false, 
+  onToggleCheck, 
+  onDelete,
+  onSetTag,
+}) {
   const [copied, setCopied] = useState(false);
 
   const getInitials = (name) => {
@@ -32,7 +40,7 @@ export default function LeadCard({ lead, onSelect, isSelected }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const getTierClass = (tier) => {
+  const getTierClass = () => {
     // Follows JobBoard-design.md: Role/tier labels use neutral Surface-Container-High
     return styles.tierNeutral;
   };
@@ -44,6 +52,19 @@ export default function LeadCard({ lead, onSelect, isSelected }) {
     >
       {/* Top Header */}
       <div className={styles.header}>
+        {onToggleCheck && (
+          <input
+            type="checkbox"
+            className={styles.cardCheckbox}
+            checked={isChecked}
+            onChange={(e) => {
+              e.stopPropagation();
+              onToggleCheck(lead.id);
+            }}
+            onClick={(e) => e.stopPropagation()}
+            title="Select prospect"
+          />
+        )}
         <div className={styles.avatar}>
           {getInitials(lead.full_name)}
         </div>
@@ -122,6 +143,46 @@ export default function LeadCard({ lead, onSelect, isSelected }) {
         )}
       </div>
 
+      {/* Public Tags Badges */}
+      {(() => {
+        const publicTags = (lead.tags || []).filter((t) => t.type !== 'system');
+        if (publicTags.length === 0) return null;
+        return (
+          <div className={styles.cardTagsRow}>
+            {publicTags.slice(0, 3).map((tag) => (
+              <span
+                key={tag.id || tag.name}
+                className={styles.cardTagPill}
+                style={{
+                  backgroundColor: `${tag.color || '#1fa97d'}18`,
+                  color: tag.color || '#1fa97d',
+                  borderColor: `${tag.color || '#1fa97d'}40`,
+                  cursor: onSetTag ? 'pointer' : 'default',
+                }}
+                onClick={(e) => {
+                  if (onSetTag) {
+                    e.stopPropagation();
+                    onSetTag(tag.slug);
+                  }
+                }}
+                title={onSetTag ? `Filter by tag: ${tag.name}` : tag.name}
+              >
+                <span
+                  className={styles.cardTagDot}
+                  style={{ backgroundColor: tag.color || '#1fa97d' }}
+                />
+                <span>{tag.name}</span>
+              </span>
+            ))}
+            {publicTags.length > 3 && (
+              <span className={styles.moreTagsPill}>
+                +{publicTags.length - 3}
+              </span>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Footer & Direct Actions */}
       <div className={styles.footer} onClick={(e) => e.stopPropagation()}>
         <div className={styles.contactGroup}>
@@ -172,6 +233,19 @@ export default function LeadCard({ lead, onSelect, isSelected }) {
           >
             <Eye size={14} />
           </button>
+
+          {onDelete && (
+            <button
+              className={`${styles.iconBtn} ${styles.deleteIconBtn}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(lead);
+              }}
+              title="Permanently Delete Lead"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -1,11 +1,12 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, ChevronLeft, ChevronRight, LogOut, Zap } from 'lucide-react';
+import { LayoutDashboard, Users, Tag, ChevronLeft, ChevronRight, LogOut, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import styles from './Sidebar.module.css';
 
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/leads',     label: 'Leads',     icon: Users },
+  { to: '/tags',      label: 'Tags',      icon: Tag },
 ];
 
 export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile }) {

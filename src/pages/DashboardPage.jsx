@@ -3,7 +3,10 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import { useQueries } from '@tanstack/react-query';
-import { Users, CalendarDays, TrendingUp, BarChart3 } from 'lucide-react';
+import {
+  Users, CalendarDays, TrendingUp, BarChart3,
+  ShieldAlert, CheckCircle2, History, Phone, Globe, Mail, AlertTriangle
+} from 'lucide-react';
 import * as statsApi from '../api/stats';
 import styles from './DashboardPage.module.css';
 
@@ -43,6 +46,10 @@ export default function DashboardPage() {
   const byTitleTier = tierRes.data?.data || tierRes.data || [];
   const byCountry = countryRes.data?.data || countryRes.data || [];
 
+  const dataQuality = summary.data_quality || {};
+  const ingestionMetrics = summary.ingestion_metrics || {};
+  const recentBatches = summary.recent_batches || [];
+
   const statCards = [
     { label: 'Total Leads', value: summary.total_leads ?? 0, icon: Users, color: 'mint' },
     { label: 'Today', value: summary.today ?? 0, icon: CalendarDays, color: 'coral' },
@@ -79,6 +86,132 @@ export default function DashboardPage() {
             <div className={styles.statusLabel}>{status}</div>
           </div>
         ))}
+      </div>
+
+      {/* ── Data Quality & Ingestion Activity ── */}
+      <div className={styles.qualityAndActivityGrid}>
+        {/* Data Quality Card */}
+        <div className={styles.auditCard}>
+          <div className={styles.cardHeaderRow}>
+            <h3 className={styles.auditCardTitle}>
+              <ShieldAlert size={18} /> Data Quality & Health
+            </h3>
+            <span className={`${styles.countPill} ${(dataQuality.incomplete_records ?? 0) > 0 ? styles.duplicates : styles.success}`}>
+              {dataQuality.incomplete_records ?? 0} Incomplete
+            </span>
+          </div>
+          <div className={styles.qualityMetricsList}>
+            <div className={styles.qualityRow}>
+              <span className={styles.qualityLabel}>
+                <Phone size={15} /> Missing Contact Number
+              </span>
+              <span className={`${styles.qualityValue} ${(dataQuality.missing_phone ?? 0) > 0 ? styles.warn : styles.ok}`}>
+                {(dataQuality.missing_phone ?? 0).toLocaleString()}
+              </span>
+            </div>
+            <div className={styles.qualityRow}>
+              <span className={styles.qualityLabel}>
+                <Globe size={15} /> Missing LinkedIn URL
+              </span>
+              <span className={`${styles.qualityValue} ${(dataQuality.missing_linkedin ?? 0) > 0 ? styles.warn : styles.ok}`}>
+                {(dataQuality.missing_linkedin ?? 0).toLocaleString()}
+              </span>
+            </div>
+            <div className={styles.qualityRow}>
+              <span className={styles.qualityLabel}>
+                <Mail size={15} /> Unverified Corporate Email
+              </span>
+              <span className={`${styles.qualityValue} ${(dataQuality.unverified_corporate_email ?? 0) > 0 ? styles.warn : styles.ok}`}>
+                {(dataQuality.unverified_corporate_email ?? 0).toLocaleString()}
+              </span>
+            </div>
+            <div className={styles.qualityRow}>
+              <span className={styles.qualityLabel}>
+                <AlertTriangle size={15} /> Missing Company Domain
+              </span>
+              <span className={`${styles.qualityValue} ${(dataQuality.missing_company_domain ?? 0) > 0 ? styles.warn : styles.ok}`}>
+                {(dataQuality.missing_company_domain ?? 0).toLocaleString()}
+              </span>
+            </div>
+            <div className={styles.qualityRow}>
+              <span className={styles.qualityLabel}>
+                <CheckCircle2 size={15} /> Duplicates Prevented
+              </span>
+              <span className={`${styles.qualityValue} ${styles.ok}`}>
+                {(ingestionMetrics.duplicates_prevented ?? 0).toLocaleString()}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Batches Activity Card */}
+        <div className={styles.auditCard}>
+          <div className={styles.cardHeaderRow}>
+            <h3 className={styles.auditCardTitle}>
+              <History size={18} /> Recent Ingestion Activity
+            </h3>
+          </div>
+          {recentBatches.length === 0 ? (
+            <div className={styles.emptyBatches}>No recent ingestion batches recorded yet.</div>
+          ) : (
+            <div className={styles.batchTableWrapper}>
+              <table className={styles.batchTable}>
+                <thead>
+                  <tr>
+                    <th>Source</th>
+                    <th>Batch / File</th>
+                    <th>Inserted</th>
+                    <th>Duplicates</th>
+                    <th>Errors</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentBatches.map((batch) => (
+                    <tr key={batch.id}>
+                      <td>
+                        <span className={`${styles.sourceBadge} ${styles[batch.source] || ''}`}>
+                          {batch.source}
+                        </span>
+                      </td>
+                      <td>
+                        <span title={batch.batch_id || batch.file_name}>
+                          {batch.file_name || (batch.batch_id ? `${batch.batch_id.slice(0, 8)}…` : 'Manual')}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`${styles.countPill} ${styles.success}`}>
+                          +{batch.inserted_count ?? 0}
+                        </span>
+                      </td>
+                      <td>
+                        {(batch.duplicate_count ?? 0) > 0 ? (
+                          <span className={`${styles.countPill} ${styles.duplicates}`}>
+                            {batch.duplicate_count}
+                          </span>
+                        ) : (
+                          '0'
+                        )}
+                      </td>
+                      <td>
+                        {(batch.error_count ?? 0) > 0 ? (
+                          <span className={`${styles.countPill} ${styles.errors}`}>
+                            {batch.error_count}
+                          </span>
+                        ) : (
+                          '0'
+                        )}
+                      </td>
+                      <td style={{ fontSize: '0.75rem', color: '#52584a' }}>
+                        {batch.created_at ? new Date(batch.created_at).toLocaleDateString('en', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Charts ── */}

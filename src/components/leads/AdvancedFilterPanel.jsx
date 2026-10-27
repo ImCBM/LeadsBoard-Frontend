@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import {
-  Users, Globe, Mail, MapPin, Building2,
-  Tag, Calendar, Sparkles, Search, X, ChevronDown
+  Users, Globe, MapPin, Building2,
+  Sparkles, Search, X, ChevronDown, Tag as TagIcon
 } from 'lucide-react';
 import styles from './AdvancedFilterPanel.module.css';
 
@@ -198,8 +198,6 @@ export default function AdvancedFilterPanel({
   onFilterChange,
   filterOptions = {},
 }) {
-  if (!isOpen) return null;
-
   const {
     industry = '',
     country = '',
@@ -212,7 +210,23 @@ export default function AdvancedFilterPanel({
     emailStatus = '',
     dateFrom = '',
     dateTo = '',
-  } = filters;
+    tag = '',
+  } = filters || {};
+
+  const publicTags = useMemo(() => {
+    const all = filterOptions.tags || [];
+    return all.filter((t) => t.type !== 'system');
+  }, [filterOptions.tags]);
+
+  const availableCountries = useMemo(() => {
+    if (!isOpen) return [];
+    const allCountries = filterOptions.countries || [];
+    if (!region) return allCountries;
+    const regionList = REGION_COUNTRIES[region] || [];
+    return allCountries.filter((c) => regionList.includes(c));
+  }, [isOpen, filterOptions.countries, region]);
+
+  if (!isOpen) return null;
 
   const handleChange = (key, value) => {
     onFilterChange(key, value);
@@ -240,13 +254,6 @@ export default function AdvancedFilterPanel({
       handleChange('region', matchedRegion || '');
     }
   };
-
-  const availableCountries = useMemo(() => {
-    const allCountries = filterOptions.countries || [];
-    if (!region) return allCountries;
-    const regionList = REGION_COUNTRIES[region] || [];
-    return allCountries.filter((c) => regionList.includes(c));
-  }, [filterOptions.countries, region]);
 
   return (
     <div className={styles.panel}>
@@ -449,6 +456,47 @@ export default function AdvancedFilterPanel({
               onChange={(e) => handleChange('dateTo', e.target.value)}
               title="Date to"
             />
+          </div>
+        </div>
+
+        {/* ── Block 5: Public Tags & Segments ── */}
+        <div className={styles.fullWidthBlock}>
+          <div className={styles.blockHeader}>
+            <TagIcon size={13} className={styles.blockIcon} />
+            <span className={styles.blockTitle}>Public Tags</span>
+          </div>
+          <div className={styles.chipRow} style={{ flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className={`${styles.miniChip} ${!tag ? styles.miniChipActive : ''}`}
+              onClick={() => handleChange('tag', '')}
+            >
+              All Tags
+            </button>
+            {publicTags.map((t) => {
+              const isActive = (tag || '') === t.slug || (tag || '') === t.name;
+              return (
+                <button
+                  key={t.id || t.slug}
+                  type="button"
+                  className={`${styles.miniChip} ${isActive ? styles.miniChipActive : ''}`}
+                  onClick={() => handleChange('tag', isActive ? '' : (t.slug || t.name))}
+                  title={t.description || t.name}
+                >
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      backgroundColor: t.color || '#1fa97d',
+                      marginRight: '6px',
+                    }}
+                  />
+                  {t.name}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

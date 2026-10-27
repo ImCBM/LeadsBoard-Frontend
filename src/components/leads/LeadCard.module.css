@@ -203,6 +203,42 @@
   font-weight: 500;
 }
 
+/* ── Tags Row ── */
+.cardTagsRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.cardTagPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  line-height: 1.2;
+}
+
+.cardTagDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.moreTagsPill {
+  font-size: 10px;
+  color: var(--on-surface-variant);
+  font-weight: 600;
+  background: var(--surface-container);
+  padding: 2px 5px;
+  border-radius: var(--radius-pill);
+}
+
 /* ── Footer ── */
 .footer {
   display: flex;
@@ -295,7 +331,27 @@
 }
 
 .viewBtn:hover {
-  background-color: var(--primary);
-  color: var(--on-primary);
+  color: var(--primary);
   border-color: var(--primary);
+  background-color: var(--primary-container);
+}
+
+.cardCheckbox {
+  accent-color: var(--primary, #1fa97d);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.deleteIconBtn {
+  color: var(--on-surface-variant);
+  transition: all var(--transition-fast);
+}
+
+.deleteIconBtn:hover {
+  color: var(--error, #c13f2c) !important;
+  background-color: var(--error-container, #fad9d0) !important;
+  border-color: #f3bcaf !important;
 }

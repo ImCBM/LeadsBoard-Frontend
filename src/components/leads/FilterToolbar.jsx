@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import {
-  Search, X, Filter, ArrowUpDown, ArrowUp, ArrowDown,
+  Search, X, Filter, ArrowUpDown,
   RotateCcw, ChevronDown, Loader2
 } from 'lucide-react';
 import styles from './FilterToolbar.module.css';
