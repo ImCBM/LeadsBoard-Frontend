@@ -199,8 +199,20 @@ export default function LeadsPage() {
     try {
       await leadsApi.exportCsv(params);
       toast.success('CSV export downloaded');
-    } catch {
-      toast.error('Export failed');
+    } catch (err) {
+      let message = 'Export failed';
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const parsed = JSON.parse(text);
+          if (parsed.message) message = parsed.message;
+        } catch {
+          // Keep fallback
+        }
+      } else if (err.response?.data?.message) {
+        message = err.response.data.message;
+      }
+      toast.error(message);
     }
   };
 

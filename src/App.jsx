@@ -7,6 +7,7 @@ import DashboardPage from './pages/DashboardPage';
 import LeadsPage from './pages/LeadsPage';
 import LeadDetailPage from './pages/LeadDetailPage';
 import TagsPage from './pages/TagsPage';
+import DeveloperPage from './pages/DeveloperPage';
 
 export default function App() {
   return (
@@ -50,6 +51,7 @@ export default function App() {
           <Route path="leads" element={<LeadsPage />} />
           <Route path="leads/:id" element={<LeadDetailPage />} />
           <Route path="tags" element={<TagsPage />} />
+          <Route path="developer" element={<DeveloperPage />} />
         </Route>
 
         {/* Catch-all */}
