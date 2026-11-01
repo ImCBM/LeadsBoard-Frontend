@@ -182,7 +182,7 @@ export default function ImportLeadsModal({ isOpen, onClose, onSuccess }) {
             <div>
               <h2 className={styles.title}>Import Leads via CSV</h2>
               <p className={styles.subtitle}>
-                Upload lead spreadsheets. Records are validated, normalized, and checked for email & phone duplicates.
+                Upload lead spreadsheets. Only a name is required — incomplete data is accepted. Duplicates are detected by email & phone.
               </p>
             </div>
           </div>
@@ -333,7 +333,7 @@ export default function ImportLeadsModal({ isOpen, onClose, onSuccess }) {
                   Click to browse or drag and drop your CSV file here
                 </div>
                 <div className={styles.dropzoneSubtext}>
-                  Supports UTF-8 CSVs up to 10MB. Duplicate emails & contact numbers are detected automatically.
+                  Supports UTF-8 CSVs up to 10MB. Incomplete data is OK — duplicates are detected by email & phone when available.
                 </div>
               </div>
 
