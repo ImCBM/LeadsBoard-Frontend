@@ -196,8 +196,8 @@ function ApiKeysPanel() {
       <div className={styles.summaryBar}>
         <div className={styles.summaryStats}>
           <div className={styles.summaryStat}>
-            <span className={styles.summaryValue}>{meta.total ?? keys.length}</span>
-            <span className={styles.summaryLabel}>Keys</span>
+            <span className={styles.summaryValue}>{meta.active_keys_count ?? meta.total ?? keys.length}</span>
+            <span className={styles.summaryLabel}>Active Keys</span>
           </div>
           <div className={styles.summaryDivider} />
           <div className={styles.summaryStat}>
@@ -206,13 +206,26 @@ function ApiKeysPanel() {
           </div>
           <div className={styles.summaryDivider} />
           <div className={styles.summaryStat}>
-            <span className={`${styles.summaryValue} ${styles.tierBadge}`}>{meta.tier ?? 'developer'}</span>
-            <span className={styles.summaryLabel}>Tier</span>
+            <span className={`${styles.summaryValue} ${styles.tierBadge}`}>{meta.tier_name ?? meta.tier ?? 'developer'}</span>
+            <span className={styles.summaryLabel}>Plan Tier</span>
           </div>
+          {meta.rate_limit_per_minute && (
+            <>
+              <div className={styles.summaryDivider} />
+              <div className={styles.summaryStat}>
+                <span className={styles.summaryValue}>{meta.rate_limit_per_minute}/m</span>
+                <span className={styles.summaryLabel}>Rate Limit</span>
+              </div>
+            </>
+          )}
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
+        <Button
+          onClick={() => setShowCreateModal(true)}
+          disabled={meta.max_keys && (meta.active_keys_count ?? keys.length) >= meta.max_keys}
+          title={meta.max_keys && (meta.active_keys_count ?? keys.length) >= meta.max_keys ? 'Max API keys limit reached for your plan' : 'Create new API key'}
+        >
           <Plus size={16} />
-          Create API Key
+          {meta.max_keys && (meta.active_keys_count ?? keys.length) >= meta.max_keys ? 'Plan Limit Reached' : 'Create API Key'}
         </Button>
       </div>
 
@@ -247,6 +260,7 @@ function ApiKeysPanel() {
       {/* Create Modal */}
       {showCreateModal && (
         <CreateKeyModal
+          tierInfo={meta}
           onClose={() => setShowCreateModal(false)}
           onCreated={(result) => {
             queryClient.invalidateQueries({ queryKey: ['developer', 'api-keys'] });
@@ -378,7 +392,7 @@ function KeyCard({ apiKey, expanded, onToggleExpand, onCopy, onDelete, onRotate,
 
 // ── Create Key Modal ──
 
-function CreateKeyModal({ onClose, onCreated }) {
+function CreateKeyModal({ onClose, onCreated, tierInfo }) {
   const [name, setName] = useState('');
   const [keyType, setKeyType] = useState('secret');
   const [selectedScopes, setSelectedScopes] = useState([]);
@@ -393,6 +407,29 @@ function CreateKeyModal({ onClose, onCreated }) {
     }
     return ALL_SCOPES;
   }, [keyType]);
+
+  const isScopeAllowed = (scopeValue) => {
+    if (!tierInfo?.allowed_scopes) return true;
+    if (scopeValue === '*') {
+      return tierInfo.allowed_scopes.includes('*');
+    }
+    return tierInfo.allowed_scopes.includes('*') || tierInfo.allowed_scopes.includes(scopeValue);
+  };
+
+  const isPresetAllowed = (preset) => {
+    if (!tierInfo?.allowed_scopes) return true;
+    if (tierInfo.allowed_scopes.includes('*')) return true;
+    if (preset === 'read-only') {
+      return ['leads:read', 'tags:read', 'stats:read'].every((s) => tierInfo.allowed_scopes.includes(s));
+    }
+    if (preset === 'write-only') {
+      return ['leads:write', 'leads:delete', 'leads:import', 'tags:write', 'tags:delete', 'webhooks:post'].every((s) => tierInfo.allowed_scopes.includes(s));
+    }
+    if (preset === 'full') {
+      return false;
+    }
+    return true;
+  };
 
   const handlePresetChange = (preset) => {
     setUsePreset(preset);
@@ -458,6 +495,18 @@ function CreateKeyModal({ onClose, onCreated }) {
         </div>
 
         <form onSubmit={handleSubmit} className={styles.modalBody}>
+          {tierInfo && (
+            <div className={styles.tierCeilingBanner}>
+              <div className={styles.tierCeilingTitle}>
+                <Layers size={14} />
+                <span>{tierInfo.tier_name || tierInfo.tier} Plan Entitlements</span>
+              </div>
+              <div className={styles.tierCeilingStats}>
+                Limit: {tierInfo.rate_limit_per_minute ?? 60} req/min · Keys: {tierInfo.active_keys_count ?? 0}/{tierInfo.max_keys ?? '∞'}
+              </div>
+            </div>
+          )}
+
           {error && (
             <div className={styles.formError}>
               <AlertTriangle size={16} /> {error}
@@ -511,7 +560,7 @@ function CreateKeyModal({ onClose, onCreated }) {
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>Scope Presets</label>
             <div className={styles.presetSelector}>
-              {SCOPE_PRESETS.filter((p) => keyType === 'secret' || p.value === 'read-only').map((preset) => (
+              {SCOPE_PRESETS.filter((p) => (keyType === 'secret' || p.value === 'read-only') && isPresetAllowed(p.value)).map((preset) => (
                 <button
                   key={preset.value}
                   type="button"
@@ -539,17 +588,32 @@ function CreateKeyModal({ onClose, onCreated }) {
                 <div key={resource} className={styles.scopeGroup}>
                   <div className={styles.scopeGroupLabel}>{resource}</div>
                   <div className={styles.scopeGroupItems}>
-                    {scopes.map((scope) => (
-                      <label key={scope.value} className={styles.scopeCheckbox}>
-                        <input
-                          type="checkbox"
-                          checked={selectedScopes.includes(scope.value) || selectedScopes.includes('*')}
-                          disabled={selectedScopes.includes('*') && scope.value !== '*'}
-                          onChange={() => toggleScope(scope.value)}
-                        />
-                        <span className={styles.scopeCheckboxLabel}>{scope.action}</span>
-                      </label>
-                    ))}
+                    {scopes.map((scope) => {
+                      const allowed = isScopeAllowed(scope.value);
+                      const isWildcardSelected = selectedScopes.includes('*');
+                      const isChecked = allowed && (selectedScopes.includes(scope.value) || isWildcardSelected);
+
+                      return (
+                        <label
+                          key={scope.value}
+                          className={`${styles.scopeCheckbox} ${!allowed ? styles.scopeLocked : ''}`}
+                          title={!allowed ? `Locked: '${scope.value}' requires a higher tier plan` : undefined}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            disabled={!allowed || (isWildcardSelected && scope.value !== '*')}
+                            onChange={() => allowed && toggleScope(scope.value)}
+                          />
+                          <span className={styles.scopeCheckboxLabel}>{scope.action}</span>
+                          {!allowed && (
+                            <span className={styles.scopeLockedBadge}>
+                              <Lock size={10} />
+                            </span>
+                          )}
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
@@ -560,15 +624,18 @@ function CreateKeyModal({ onClose, onCreated }) {
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>
               Rate Limit Override
-              <span className={styles.formHint}>(optional, leave blank for tier default)</span>
+              <span className={styles.formHint}>
+                (optional, max {tierInfo?.rate_limit_per_minute ?? 60} req/min for your plan)
+              </span>
             </label>
             <input
               className={styles.formInput}
               type="number"
               value={rateLimit}
               onChange={(e) => setRateLimit(e.target.value)}
-              placeholder="requests per minute"
-              min={0}
+              placeholder={`Default: ${tierInfo?.rate_limit_per_minute ?? 60} req/min`}
+              min={1}
+              max={tierInfo?.rate_limit_per_minute || undefined}
             />
           </div>
 

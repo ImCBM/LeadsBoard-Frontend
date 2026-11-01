@@ -778,6 +778,51 @@
   font-weight: 500;
 }
 
+.scopeLocked {
+  opacity: 0.45;
+  cursor: not-allowed !important;
+}
+
+.scopeLocked input[type="checkbox"] {
+  cursor: not-allowed !important;
+}
+
+.scopeLockedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--on-surface-variant);
+  margin-left: 4px;
+}
+
+.tierCeilingBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--surface-container-high);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--on-surface);
+}
+
+.tierCeilingTitle {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary);
+  text-transform: capitalize;
+}
+
+.tierCeilingStats {
+  font-size: 11px;
+  color: var(--on-surface-variant);
+}
+
 /* ═══════════════════════════════════════════════
    Traces Table
    ═══════════════════════════════════════════════ */
