@@ -26,13 +26,23 @@ const ALL_SCOPES = [
 ];
 
 const SCOPE_PRESETS = [
-  { value: 'read-only', label: 'Read Only', description: 'leads:read, tags:read, stats:read' },
+  { value: 'read-only', label: 'Read Only', description: 'leads:read, tags:read, stats:read, leads:export' },
   { value: 'write-only', label: 'Write Only', description: 'leads:write, leads:delete, leads:import, tags:write, tags:delete, webhooks:post' },
-  { value: 'full', label: 'Full Access', description: 'All scopes (wildcard *)' },
+  { value: 'full', label: 'Full Access', description: 'All permitted scopes for your tier ceiling' },
 ];
 
-// Public keys cannot have mutation scopes
-const PUBLIC_FORBIDDEN_SCOPES = ['leads:write', 'leads:delete', 'tags:write', 'tags:delete', 'webhooks:post'];
+const READ_SCOPES = ['leads:read', 'tags:read', 'stats:read', 'leads:export'];
+const WRITE_SCOPES = ['leads:write', 'leads:delete', 'leads:import', 'tags:write', 'tags:delete', 'webhooks:post'];
+
+// Public keys cannot have mutation or import scopes
+const PUBLIC_FORBIDDEN_SCOPES = [
+  'leads:write',
+  'leads:delete',
+  'leads:import',
+  'tags:write',
+  'tags:delete',
+  'webhooks:post',
+];
 
 const HTTP_METHOD_COLORS = {
   GET: 'var(--primary)',
@@ -252,6 +262,7 @@ function ApiKeysPanel() {
               onRotate={() => handleRotate(key)}
               onToggleActive={(active) => toggleMutation.mutate({ id: key.id, is_active: active })}
               revealedKey={revealedKey?.id === key.id ? revealedKey.plainTextKey : null}
+              onDismissRevealed={() => setRevealedKey(null)}
             />
           ))}
         </div>
@@ -275,7 +286,7 @@ function ApiKeysPanel() {
 
 // ── Key Card ──
 
-function KeyCard({ apiKey, expanded, onToggleExpand, onCopy, onDelete, onRotate, onToggleActive, revealedKey }) {
+function KeyCard({ apiKey, expanded, onToggleExpand, onCopy, onDelete, onRotate, onToggleActive, revealedKey, onDismissRevealed }) {
   const isPublic = apiKey.key_type === 'public';
   const TypeIcon = isPublic ? Globe : Lock;
 
@@ -320,8 +331,20 @@ function KeyCard({ apiKey, expanded, onToggleExpand, onCopy, onDelete, onRotate,
       {revealedKey && (
         <div className={styles.revealedKeyBanner}>
           <div className={styles.revealedKeyHeader}>
-            <AlertTriangle size={16} />
-            <strong>Save this key now — it won't be shown again</strong>
+            <div className={styles.revealedKeyHeaderLeft}>
+              <AlertTriangle size={16} />
+              <strong>Save this key now — it won't be shown again</strong>
+            </div>
+            {onDismissRevealed && (
+              <button
+                type="button"
+                className={styles.dismissBtn}
+                onClick={onDismissRevealed}
+                title="Dismiss key alert"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
           <div className={styles.revealedKeyValue}>
             <code>{revealedKey}</code>
@@ -410,23 +433,20 @@ function CreateKeyModal({ onClose, onCreated, tierInfo }) {
 
   const isScopeAllowed = (scopeValue) => {
     if (!tierInfo?.allowed_scopes) return true;
-    if (scopeValue === '*') {
-      return tierInfo.allowed_scopes.includes('*');
-    }
-    return tierInfo.allowed_scopes.includes('*') || tierInfo.allowed_scopes.includes(scopeValue);
+    if (tierInfo.allowed_scopes.includes('*')) return true;
+    return tierInfo.allowed_scopes.includes(scopeValue);
   };
 
   const isPresetAllowed = (preset) => {
     if (!tierInfo?.allowed_scopes) return true;
-    if (tierInfo.allowed_scopes.includes('*')) return true;
     if (preset === 'read-only') {
-      return ['leads:read', 'tags:read', 'stats:read'].every((s) => tierInfo.allowed_scopes.includes(s));
+      return READ_SCOPES.some(isScopeAllowed);
     }
     if (preset === 'write-only') {
-      return ['leads:write', 'leads:delete', 'leads:import', 'tags:write', 'tags:delete', 'webhooks:post'].every((s) => tierInfo.allowed_scopes.includes(s));
+      return keyType === 'secret' && WRITE_SCOPES.some(isScopeAllowed);
     }
     if (preset === 'full') {
-      return false;
+      return availableScopes.some((s) => isScopeAllowed(s.value));
     }
     return true;
   };
@@ -434,11 +454,20 @@ function CreateKeyModal({ onClose, onCreated, tierInfo }) {
   const handlePresetChange = (preset) => {
     setUsePreset(preset);
     if (preset === 'read-only') {
-      setSelectedScopes(['leads:read', 'tags:read', 'stats:read']);
+      const readAllowed = availableScopes
+        .filter((s) => READ_SCOPES.includes(s.value) && isScopeAllowed(s.value))
+        .map((s) => s.value);
+      setSelectedScopes(readAllowed);
     } else if (preset === 'write-only') {
-      setSelectedScopes(['leads:write', 'leads:delete', 'leads:import', 'tags:write', 'tags:delete', 'webhooks:post']);
+      const writeAllowed = availableScopes
+        .filter((s) => WRITE_SCOPES.includes(s.value) && isScopeAllowed(s.value))
+        .map((s) => s.value);
+      setSelectedScopes(writeAllowed);
     } else if (preset === 'full') {
-      setSelectedScopes(['*']);
+      const fullAllowed = availableScopes
+        .filter((s) => isScopeAllowed(s.value))
+        .map((s) => s.value);
+      setSelectedScopes(fullAllowed);
     } else {
       setSelectedScopes([]);
     }
@@ -460,11 +489,25 @@ function CreateKeyModal({ onClose, onCreated, tierInfo }) {
 
     try {
       const payload = {
-        name,
+        name: name.trim(),
         key_type: keyType,
         scopes: selectedScopes.length > 0 ? selectedScopes : undefined,
       };
-      if (rateLimit) payload.rate_limit_per_minute = parseInt(rateLimit, 10);
+
+      if (rateLimit) {
+        const parsed = parseInt(rateLimit, 10);
+        if (isNaN(parsed) || parsed < 1) {
+          setError('Rate limit override must be a positive number');
+          setSubmitting(false);
+          return;
+        }
+        if (tierInfo?.rate_limit_per_minute && parsed > tierInfo.rate_limit_per_minute) {
+          setError(`Rate limit override cannot exceed your plan maximum of ${tierInfo.rate_limit_per_minute} req/min`);
+          setSubmitting(false);
+          return;
+        }
+        payload.rate_limit_per_minute = parsed;
+      }
 
       const result = await developerApi.createApiKey(payload);
       onCreated(result);
@@ -502,7 +545,7 @@ function CreateKeyModal({ onClose, onCreated, tierInfo }) {
                 <span>{tierInfo.tier_name || tierInfo.tier} Plan Entitlements</span>
               </div>
               <div className={styles.tierCeilingStats}>
-                Limit: {tierInfo.rate_limit_per_minute ?? 60} req/min · Keys: {tierInfo.active_keys_count ?? 0}/{tierInfo.max_keys ?? '∞'}
+                Limit: {tierInfo.rate_limit_per_minute ?? 60} req/min · Keys: {tierInfo.active_keys_count ?? tierInfo.total ?? 0}/{tierInfo.max_keys ?? '∞'}
               </div>
             </div>
           )}
